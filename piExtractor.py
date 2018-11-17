@@ -17,46 +17,94 @@ import pyshark
 # import argparse
 import flowlib
 
+from datetime import datetime
+
+
+def next_flow_id():
+    global last_id_removed
+    global last_id_assigned
+
+    __next_id = last_id_assigned + 1
+    last_id_assigned += 1
+
+    if last_id_removed:
+        __next_id = last_id_removed[0]
+        last_id_removed.remove(__next_id)
+        last_id_assigned -= 1
+
+    return __next_id
+
 
 def packet_callback(packet):
     global flow_list
+    global next_id
 
     try:
+        aggregation = False
+
         proto_value = flowlib.Packet.get_protocol(packet)
         pkt = flowlib.Packet(packet)
 
         for flw in flow_list:
             if flw.aggregate(pkt):
+                aggregation = True
                 break
-            elif 'TCP' in proto_value[0]:
-                flow = flowlib.TCPFlow(packet.ip.src, packet.ip.dst, int(packet[proto_value[0]].srcport), int(packet[
-                      proto_value[0]].dstport), int(proto_value[1]))
-                # If app_protocol known, add it
-                flow.aggregate(pkt)
-                flow_list += [flow]
+
+        try:
+            if aggregation is not True:
+                if 'TCP' in proto_value[0]:
+                    flow = flowlib.TCPFlow(next_id, packet.ip.src, packet.ip.dst, int(packet[proto_value[0]].srcport), int(
+                            packet[proto_value[0]].dstport), int(proto_value[1]))
+                    # If app_protocol known, add it
+                    aggregation = flow.aggregate(pkt)
+                    if aggregation:
+                        flow_list += [flow]
+                        next_id = next_flow_id()
+
+                else:
+                    flow = flowlib.Flow(next_id, packet.ip.src, packet.ip.dst, int(packet[proto_value[0]].srcport), int(
+                            packet[proto_value[0]].dstport), int(proto_value[1]))
+                    aggregation = flow.aggregate(pkt)
+                    if aggregation:
+                        flow_list += [flow]
+                        next_id = next_flow_id()
+
+        except Exception as e:
+            print("Flow error : " + str(e))
 
     except Exception as e:
-        print("Bad protocol : " + str(e))
+        print("Error : " + str(e))
 
 
 def main():
     global flow_list
 
+    start_time = datetime.now()
+
     # parser = argparse.ArgumentParser(description='Network feature extractor for RaspberryPi')
     # parser.add_argument("-i", "--iface", dest="iface", required=True, type=str, help="Network interface to sniff")
-    # parsed_command = parser.parse_args(sys.argv)
+    # args = parser.parse_args(sys.argv)
 
-    capture = pyshark.LiveCapture(interface='wlp2s0')  # parsed_command.iface)
+    capture = pyshark.LiveCapture(interface='wlp2s0')  # args.iface)
     capture.set_debug(True)
 
     try:
         capture.apply_on_packets(packet_callback)
     except Exception as e:
-        print(str(e))
-        print("Nb Flow = " + str(len(flow_list)))
+        # print(str(e))
+        pass
+    finally:
+        end_time = datetime.now()
+
+        print("Number of flow recorded :\n\t" + str(last_id_assigned - len(last_id_removed)) if last_id_assigned >= 0
+              else str(0) + " since " + str(start_time))
+        print("Record duration :\n\t" + str(end_time - start_time))
         print("Close")
 
 
 if __name__ == '__main__':
     flow_list = []
+    last_id_removed = []
+    last_id_assigned = -1
+    next_id = 0
     main()

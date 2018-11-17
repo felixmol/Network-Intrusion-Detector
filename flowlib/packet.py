@@ -16,7 +16,7 @@
 from flowlib.consts import FLAGS
 
 
-class InvalidPacketType(Exception):
+class PacketInitException(Exception):
     pass
 
 
@@ -34,7 +34,7 @@ class Packet(object):
             self.ttl = int(packet.ip.ttl)
             self.hash = self.__hash()
         except Exception as e:
-            raise InvalidPacketType(str(e))
+            raise PacketInitException(e)
 
     def __hash(self):
         string1 = self.source_ip + self.destination_ip + str(self.source_port) \
@@ -44,17 +44,20 @@ class Packet(object):
     @staticmethod
     def __get_flags(packet):
         flags = []
-        for flag in FLAGS.keys():
-            if int(packet.tcp.get_field_value(FLAGS[flag])) == 1:
-                flags += [flag]
-        return flags
+        try:
+            for flag in FLAGS.keys():
+                if int(packet.tcp.get_field_value(FLAGS[flag])) == 1:
+                    flags += [flag]
+            return flags
+        except:
+            return []
 
     @staticmethod
-    def get_protocol(packet) -> str in list:
+    def get_protocol(packet) -> list:
         """
 
         :param packet:
-        :rtype: str in list
+        :rtype: list
         :return:
         """
         return packet.ip.proto.showname_value.replace('(', '').replace(')', '').split(' ')
@@ -67,6 +70,9 @@ class Packet(object):
         :return: The size of the packet in bytes.
         """
         return self.size
+
+    def get_ttl(self):
+        return self.ttl
 
     def get_flags(self):
         return self.flags

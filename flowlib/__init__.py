@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 #
 # flowlib package (c) 2018 Félix Molina.
 #
@@ -17,5 +17,3 @@ from flowlib.flow import Flow
 from flowlib.flow import TCPFlow
 
 from flowlib.packet import Packet
-
-from flowlib.consts import FLAGS
