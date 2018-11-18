@@ -2,23 +2,38 @@
 #
 # !/usr/bin/env python3
 #
-# flow (c) 2018 Félix Molina.
+# flow Copyright(c) 2018 Félix Molina.
 #
-# Many thanks to Télécom SudParis (http://www.telecom-sudparis.eu) for
-# its material support of this effort.
+# Many thanks to Télécom SudParis (http://www.telecom-sudparis.eu)
 #
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
-# details.
+# MIT License
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 #
 
 from flowlib.consts import Direction
 from flowlib.consts import Flag
 from flowlib.consts import ConnectionState
-from flowlib.packet import Packet
 
 from flowlib.consts import CONNECTION_FLAGS
+
+from flowlib.packet import Packet
 
 import datetime
 import threading
@@ -32,6 +47,8 @@ class Flow(object):
 
     def __init__(self, flow_id: int, source_ip: str, destination_ip: str, source_port: int, destination_port: int,
                  transport_protocol: int, app_protocol: int = None):
+        super().__init__()
+
         try:
             self.__id = flow_id
 
@@ -64,7 +81,7 @@ class Flow(object):
             self.__timer = threading.Timer(60 * 5, self.close_flow)
             self.__closed = False
         except Exception as e:
-            raise FlowInitException(str(e))
+            raise FlowInitException(e)
 
     def __compare(self, packet_hash):
 
@@ -157,7 +174,8 @@ class TCPFlow(Flow):
 
     def __init__(self, flow_id: int, source_ip: str, destination_ip: str, source_port: int, destination_port: int,
                  transport_protocol: int, app_protocol: int = None):
-        super().__init__(flow_id, source_ip, destination_ip, source_port, destination_port, transport_protocol,
+        super().__init__(flow_id=flow_id, source_ip=source_ip, destination_ip=destination_ip, source_port=source_port,
+                         destination_port=destination_port, transport_protocol=transport_protocol, app_protocol=
                          app_protocol)
 
         self.__flags = CONNECTION_FLAGS
