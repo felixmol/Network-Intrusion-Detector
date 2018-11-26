@@ -35,8 +35,13 @@ from flowlib.consts import CONNECTION_FLAGS
 
 from flowlib.packet import Packet
 
-import datetime
+import time
 import threading
+import json
+
+
+def get_current_milli():
+    return int(round(time.time() * 1000))
 
 
 class FlowInitException(Exception):
@@ -59,14 +64,15 @@ class Flow(object):
             self.__transport_protocol = transport_protocol
             self.__app_protocol = app_protocol
 
-            self.__flow_start_time = datetime.datetime.now()
+            self.__flow_start_time = get_current_milli()
             self.__flow_end_time = 0
-            self.__flow_duration_microseconds = 0
-            self.__last_received_packet_time = datetime.datetime.now()
+            self.__flow_duration_milliseconds = 0
+            self.__last_received_packet_time = get_current_milli()
             self.__delta_time_between_packets = []
 
             self.__min_size = 0
             self.__max_size = 0
+            self.__packet_sizes = []
             self.__delta_size_bytes = 0
             self.__sum_size_bytes = 0
 
@@ -81,7 +87,7 @@ class Flow(object):
             self.__timer = threading.Timer(60 * 5, self.close_flow)
             self.__closed = False
         except Exception as e:
-            raise FlowInitException(e)
+            raise FlowInitException(str(e))
 
     def __compare(self, packet_hash):
 
@@ -93,13 +99,14 @@ class Flow(object):
             return 0
 
     def __size_actualisation(self, size):
-        self.__min_size = self.__min_size if size >= self.__min_size else size
+        self.__min_size = self.__min_size if size >= self.__min_size and self.__packet_list != [] else size
         self.__max_size = self.__max_size if size <= self.__max_size else size
         self.__delta_size_bytes = self.__max_size - self.__min_size
         self.__sum_size_bytes += size
+        self.__packet_sizes += [size]
 
     def __ttl_actualisation(self, ttl):
-        self.__min_ttl = self.__min_ttl if ttl >= self.__min_ttl else ttl
+        self.__min_ttl = self.__min_ttl if ttl >= self.__min_ttl and self.__packet_list != [] else ttl
         self.__max_ttl = self.__max_ttl if ttl <= self.__max_ttl else ttl
 
     def __flow_duration(self) -> None:
@@ -108,8 +115,8 @@ class Flow(object):
         Achieve calculation of the flow duration.
         :rtype: None
         """
-        self.__flow_end_time = datetime.datetime.now()
-        self.__flow_duration_microseconds = (self.__flow_end_time - self.__flow_start_time).microseconds
+        self.__flow_end_time = get_current_milli()
+        self.__flow_duration_microseconds = self.__flow_end_time - self.__flow_start_time
 
     def __add_packet(self, packet: Packet) -> None:
         """
@@ -127,12 +134,37 @@ class Flow(object):
         :rtype: (int, int)
         :return: 2-tuple - hash of the Source to Destination direction, hash of the Destination to Source.
         """
-        string1 = self.__source_ip + self.__destination_ip + str(self.__source_port) + str(self.__destination_port) + \
-                  str(self.__transport_protocol)
-        string2 = self.__destination_ip + self.__source_ip + str(self.__destination_port) + str(self.__source_port) + \
-                  str(self.__transport_protocol)
+        string1 = self.__source_ip + self.__destination_ip + str(self.__source_port) + str(self.__destination_port) +\
+                 str(self.__transport_protocol)
+        string2 = self.__destination_ip + self.__source_ip + str(self.__destination_port) + str(self.__source_port) +\
+                 str(self.__transport_protocol)
 
         return hash(string1), hash(string2)
+
+    def to_dict_format(self):
+        return {
+            "flowId": self.__id,
+            "sourceIp": self.__source_ip,
+            "destinationIp": self.__destination_ip,
+            "sourcePort": self.__source_port,
+            "destinationPort": self.__destination_port,
+            "transportProtocol": self.__transport_protocol,
+            "flowStartTime": self.__flow_start_time,
+            "flowEndTime": self.__flow_end_time,
+            "flowDurationMicrosenconds": self.__flow_duration_microseconds,
+            "detlaTimeBetweenPackets": self.__delta_time_between_packets,
+            "minSize": self.__min_size,
+            "maxSize": self.__max_size,
+            "packetSizes": self.__packet_sizes,
+            "delatSizeBytes": self.__delta_size_bytes,
+            "sumSizeBytes": self.__sum_size_bytes,
+            "minTTL": self.__min_ttl,
+            "maxTTL": self.__max_ttl,
+            "direction": self.__direction.value
+        }
+
+    def to_json_format(self):
+        return json.dumps(self.to_dict_format(), ensure_ascii=True)
 
     def close_flow(self, by_timer: bool = True):
         self.__closed = True
@@ -147,14 +179,15 @@ class Flow(object):
             elif self.__compare(packet.get_hash()) == 0:
                 return False
 
-            self.__add_packet(packet)
             self.__size_actualisation(packet.get_length())
             self.__ttl_actualisation(packet.get_ttl())
             self.__flow_duration()
 
-            if self.__packet_list:
-                self.__delta_time_between_packets += [datetime.datetime.now() - self.__last_received_packet_time]
-                self.__last_received_packet_time = datetime.datetime.now()
+            if len(self.__packet_list) != 0:
+                self.__delta_time_between_packets += [get_current_milli() - self.__last_received_packet_time]
+                self.__last_received_packet_time = get_current_milli()
+
+            self.__add_packet(packet)
 
             return True
 
@@ -169,14 +202,17 @@ class Flow(object):
         elif self.__compare(packet.get_hash()) == 2:
             return Direction.DestinationToSource
 
+    def get_flow_id(self):
+        return self.__id
+
 
 class TCPFlow(Flow):
 
     def __init__(self, flow_id: int, source_ip: str, destination_ip: str, source_port: int, destination_port: int,
                  transport_protocol: int, app_protocol: int = None):
         super().__init__(flow_id=flow_id, source_ip=source_ip, destination_ip=destination_ip, source_port=source_port,
-                         destination_port=destination_port, transport_protocol=transport_protocol, app_protocol=
-                         app_protocol)
+                         destination_port=destination_port, transport_protocol=transport_protocol,
+                         app_protocol=app_protocol)
 
         self.__flags = CONNECTION_FLAGS
         self.__open = False
@@ -218,14 +254,14 @@ class TCPFlow(Flow):
                 else:
                     pass
 
-    def aggregate(self, packet):
-        if super().aggregate(packet):
-            self.__follow_flag_flow(packet)
-            self.connection_state()
-
-            return True
-
-        return False
+#    def aggregate(self, packet):
+#        if super().aggregate(packet):
+#            self.__follow_flag_flow(packet)
+#            self.connection_state()
+#
+#            return True
+#
+#        return False
 
     def is_open(self):
         return self.__open

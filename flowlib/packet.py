@@ -49,7 +49,7 @@ class Packet(object):
             self.ttl = int(packet.ip.ttl)
             self.hash = self.__hash()
         except Exception as e:
-            raise PacketInitException(e)
+            raise PacketInitException(str(e))
 
     def __hash(self):
         string1 = self.source_ip + self.destination_ip + str(self.source_port) \
