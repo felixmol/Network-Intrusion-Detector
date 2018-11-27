@@ -27,7 +27,6 @@
 # SOFTWARE.
 #
 
-
 import enum
 
 

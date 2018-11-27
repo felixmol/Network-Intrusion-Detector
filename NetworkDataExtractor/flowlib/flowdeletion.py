@@ -2,7 +2,7 @@
 #
 # !/usr/bin/env python3
 #
-# flowlib package Copyright(c) 2018 Félix Molina.
+# flow deletion Copyright(c) 2018 Félix Molina.
 #
 # Many thanks to Télécom SudParis (http://www.telecom-sudparis.eu)
 #
@@ -27,4 +27,26 @@
 # SOFTWARE.
 #
 
+import multiprocessing
+from time import sleep
 
+
+class FlowDeletion(multiprocessing.Process):
+    def __init__(self, interval: int, data: multiprocessing.Queue, id_list: multiprocessing.Queue):
+        super().__init__(name="Flow deletion process")
+
+        self.__interval = interval
+        self.__data = data
+        self.__removed_ids = id_list
+
+    def run(self):
+        while 1:
+            try:
+                sleep(self.__interval)
+
+                flows = self.__data.get()
+                for id in flows.keys():
+                    self.__removed_ids.put(id)
+                    # Inscrire dans BDD
+            except (Exception, KeyboardInterrupt):
+                break

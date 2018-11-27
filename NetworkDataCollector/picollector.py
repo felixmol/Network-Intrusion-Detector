@@ -27,10 +27,12 @@
 # SOFTWARE.
 #
 
-
-# Import
-import socketserver
 import json
+import socketserver
+from queue import Queue
+
+
+# import deepanalyser
 
 
 class InvalidIPv4(Exception):
@@ -55,12 +57,17 @@ def check_ipv4_address(address) -> bool:
 
 
 def is_authorized_address(address):
-    global authorized_addresses
-
     if address in authorized_addresses:
         return True
 
     return False
+
+
+def pre_process_data(data, queue):
+    try:
+        queue.put(json.dumps(data, ensure_ascii=True) + "\n")
+    except Exception as e:
+        print(str(e))
 
 
 class CollectorStreamHandler(socketserver.StreamRequestHandler):
@@ -69,15 +76,21 @@ class CollectorStreamHandler(socketserver.StreamRequestHandler):
         print("[+] Connection from " + str(self.client_address))
         if not is_authorized_address(self.client_address[0]):
             print(self.client_address[0] + " is not an authorized extractor.")
+            print("[-] Connection closed by " + str(self.server) + "\n")
         else:
-            data = {}
             with self.rfile as file:
                 data = json.loads(file.read().strip(), encoding="utf-8")
-            for rec in data.keys():
-                print("--- record %i from %s ---" % (data[rec]["flowId"], str(self.client_address)))
-                for key in data[rec].keys():
-                    print("\t" + key + " => " + str(data[rec][key]))
-            print("[-] Connection closed by " + str(self.client_address) + "\n")
+            try:
+                for rec in data.keys():
+                    print("--- record %i from %s ---" % (data[rec]["flowId"], str(self.client_address)))
+                    for key in data[rec].keys():
+                        print("\t" + key + " => " + str(data[rec][key]))
+                    pre_process_data(data[rec], queue=flow_queue)
+            except Exception as e:
+                print(str(e))
+                pass
+            finally:
+                print("[-] Connection closed by " + str(self.client_address) + "\n")
 
 
 if __name__ == "__main__":
@@ -89,10 +102,27 @@ if __name__ == "__main__":
     # args = parser.parse_args(sys.argv)
 
     authorized_addresses = ["127.0.0.1"]
-    sock_server = socketserver.TCPServer(("", 8888), CollectorStreamHandler)
+    deep_analysis_service_use = False
 
-    print("Server listens on " + str(sock_server.server_address[0]) + ":" + str(sock_server.server_address[1]))
+    flow_queue = Queue()
+
+    deep_analyser = None
+    # if deep_analysis_service_use:
+    # deep_analyser = deepanalyser.DeepAnalyser(flow_queue)
+    # deep_analyser.start()
+
+    sock_server = socketserver.TCPServer(("", 8888), CollectorStreamHandler)
     try:
+        print("Server listens on " + str(sock_server.server_address[0]) + ":" + str(sock_server.server_address[1]))
         sock_server.serve_forever()
     except KeyboardInterrupt:
+        # if deep_analyser is not None:
+        #    deep_analyser.join(10)
+        while not flow_queue.empty():
+            flow_queue.get()
+            flow_queue.task_done()
+        try:
+            flow_queue.join()
+        except Exception:
+            pass
         print("\nServer closed")
