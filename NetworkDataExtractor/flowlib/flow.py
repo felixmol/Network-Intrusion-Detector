@@ -49,14 +49,12 @@ class FlowInitException(Exception):
 
 
 class Flow(object):
-
     def __init__(self, flow_id: int, source_ip: str, destination_ip: str, source_port: int, destination_port: int,
                  transport_protocol: int, app_protocol: int = None):
         super().__init__()
 
         try:
             self.__id = flow_id
-            self.__hash_src_to_dst, self.__hash_dst_to_src = self.__hash()
 
             self.__source_ip = source_ip
             self.__destination_ip = destination_ip
@@ -91,7 +89,8 @@ class Flow(object):
 
             self.__source_to_destination_packet_number = 0
             self.__destination_to_source_packet_number = 0
-            self.__total_packet = self.__source_to_destination_packet_number + self.__destination_to_source_packet_number
+            self.__total_packet = self.__source_to_destination_packet_number + self. \
+                __destination_to_source_packet_number
 
             self.__packet_list = []
 
@@ -101,9 +100,9 @@ class Flow(object):
             self.__count_same_source_destination_address = 0
             self.__count_state_ttl = 0
 
-            self.__timer = threading.Timer(60 * 5, self.close_flow)
-
             self.__closed = False
+
+            self.__hash_src_to_dst, self.__hash_dst_to_src = self.__hash()
         except Exception as e:
             raise FlowInitException(str(e))
 
@@ -156,7 +155,8 @@ class Flow(object):
         """
         self.__flow_end_time = get_current_milli()
         self.__flow_duration_milliseconds = self.__flow_end_time - self.__flow_start_time
-        self.__rate = self.__total_packet / round(self.__flow_duration_milliseconds * 1000, 3)
+        self.__rate = self.__total_packet / (round(self.__flow_duration_milliseconds * 1000,
+                                                   3) if self.__flow_duration_milliseconds > 0 else 1)
 
     def __add_packet(self, packet: Packet) -> None:
         """
@@ -181,10 +181,10 @@ class Flow(object):
         :rtype: (int, int)
         :return: 2-tuple - hash of the Source to Destination direction, hash of the Destination to Source.
         """
-        string1 = self.__source_ip + self.__destination_ip + str(self.__source_port) + str(self.__destination_port) +\
-                 str(self.__transport_protocol)
-        string2 = self.__destination_ip + self.__source_ip + str(self.__destination_port) + str(self.__source_port) +\
-                 str(self.__transport_protocol)
+        string1 = self.__source_ip + self.__destination_ip + str(self.__source_port) + str(self.__destination_port) + \
+                  str(self.__transport_protocol)
+        string2 = self.__destination_ip + self.__source_ip + str(self.__destination_port) + str(self.__source_port) + \
+                  str(self.__transport_protocol)
 
         return hash(string1), hash(string2)
 
@@ -221,19 +221,17 @@ class Flow(object):
             "countSameDestinationAddress": self.__count_same_destination_address,
             "countSameSourceAddressDestinationPort": self.__count_same_source_address_destination_port,
             "countSameDestinationAddressSourcePort": self.__count_same_destination_address_source_port,
-            "countSameSourceDestinationAddress": self.__count_same_source_destination_address
+            "countSameSourceDestinationAddress": self.__count_same_source_destination_address,
+            "state": "closed : " + str(self.__closed)
         }
 
     def to_json_format(self):
         return json.dumps(self.to_dict_format(), ensure_ascii=True)
 
-    def close_flow(self, by_timer: bool = True):
+    def close_flow(self):
         self.__closed = True
 
-        if by_timer is not True:
-            self.__timer.cancel()
-
-    def aggregate(self, packet, counters):
+    def aggregate(self, packet, counters=None):
         if self.__closed is not True:
             if self.__compare(packet.get_hash()) == 2:
                 self.__direction = Direction.BiDirectional
@@ -250,7 +248,8 @@ class Flow(object):
             self.__add_packet(packet)
             self.__flow_duration()
 
-            self.__counter_actualisation(counters)
+            if counters is not None:
+                self.__counter_actualisation(counters)
 
             return True
 
@@ -273,7 +272,6 @@ class Flow(object):
 
 
 class TCPFlow(Flow):
-
     def __init__(self, flow_id: int, source_ip: str, destination_ip: str, source_port: int, destination_port: int,
                  transport_protocol: int, app_protocol: int = None):
         super().__init__(flow_id=flow_id, source_ip=source_ip, destination_ip=destination_ip, source_port=source_port,
@@ -298,36 +296,36 @@ class TCPFlow(Flow):
                     self.__flags[ConnectionState.TERMINATION][ConnectionState.FIN_DST] = 1
             elif flag == Flag.ACK:
                 if self.__flags[ConnectionState.ESTABLISHMENT][ConnectionState.SYN_DST] == 1 and \
-                        direction == Direction.SourceToDestination and \
+                                direction == Direction.SourceToDestination and \
                         (self.__flags[ConnectionState.TERMINATION][ConnectionState.FIN_SRC] == 0 and
-                         self.__flags[ConnectionState.TERMINATION][ConnectionState.FIN_DST] == 0):
+                                 self.__flags[ConnectionState.TERMINATION][ConnectionState.FIN_DST] == 0):
                     self.__flags[ConnectionState.ESTABLISHMENT][ConnectionState.ACK_SRC] = 1
                 elif self.__flags[ConnectionState.ESTABLISHMENT][ConnectionState.SYN_SRC] == 1 and \
-                        direction == Direction.DestinationToSource and \
+                                direction == Direction.DestinationToSource and \
                         (self.__flags[ConnectionState.TERMINATION][ConnectionState.FIN_SRC] == 0 and
-                         self.__flags[ConnectionState.TERMINATION][ConnectionState.FIN_DST] == 0):
+                                 self.__flags[ConnectionState.TERMINATION][ConnectionState.FIN_DST] == 0):
                     self.__flags[ConnectionState.ESTABLISHMENT][ConnectionState.ACK_DST] = 1
                 elif self.__flags[ConnectionState.TERMINATION][ConnectionState.FIN_DST] == 1 and \
-                        direction == Direction.SourceToDestination and \
+                                direction == Direction.SourceToDestination and \
                         (self.__flags[ConnectionState.ESTABLISHMENT][ConnectionState.SYN_SRC] == 1 and
-                         self.__flags[ConnectionState.TERMINATION][ConnectionState.SYN_DST] == 1):
+                                 self.__flags[ConnectionState.TERMINATION][ConnectionState.SYN_DST] == 1):
                     self.__flags[ConnectionState.TERMINATION][ConnectionState.ACK_SRC] = 1
                 elif self.__flags[ConnectionState.TERMINATION][ConnectionState.FIN_SRC] == 1 and \
-                        direction == Direction.DestinationToSource and \
+                                direction == Direction.DestinationToSource and \
                         (self.__flags[ConnectionState.ESTABLISHMENT][ConnectionState.SYN_SRC] == 1 and
-                         self.__flags[ConnectionState.ESTABLISHMENT][ConnectionState.SYN_DST] == 1):
+                                 self.__flags[ConnectionState.ESTABLISHMENT][ConnectionState.SYN_DST] == 1):
                     self.__flags[ConnectionState.TERMINATION][ConnectionState.ACK_DST] = 1
                 else:
                     pass
 
-#    def aggregate(self, packet):
-#        if super().aggregate(packet):
-#            self.__follow_flag_flow(packet)
-#            self.connection_state()
-#
-#            return True
-#
-#        return False
+                #    def aggregate(self, packet):
+                #        if super().aggregate(packet):
+                #            self.__follow_flag_flow(packet)
+                #            self.connection_state()
+                #
+                #            return True
+                #
+                #        return False
 
     def is_open(self):
         return self.__open
@@ -338,6 +336,6 @@ class TCPFlow(Flow):
 
         if 0 not in self.__flags[ConnectionState.TERMINATION].values():
             self.__open = False
-            self.close_flow(False)
+            self.close_flow()
 
         return {'open': self.is_open(), 'closed': self.is_closed()}

@@ -27,8 +27,6 @@
 # SOFTWARE.
 #
 
-
-# Import
 import socketserver
 import json
 
