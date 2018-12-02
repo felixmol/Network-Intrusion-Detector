@@ -27,11 +27,12 @@
 # SOFTWARE.
 #
 
-import multiprocessing
 from time import sleep
+import multiprocessing
 
 
 class FlowDeletion(multiprocessing.Process):
+
     def __init__(self, interval: int, data: multiprocessing.Queue, id_list: multiprocessing.Queue):
         super().__init__(name="Flow deletion process")
 
@@ -47,6 +48,6 @@ class FlowDeletion(multiprocessing.Process):
                 flows = self.__data.get()
                 for id in flows.keys():
                     self.__removed_ids.put(id)
-                    # Inscrire dans BDD
+                # Inscrire dans BDD
             except (Exception, KeyboardInterrupt):
                 break

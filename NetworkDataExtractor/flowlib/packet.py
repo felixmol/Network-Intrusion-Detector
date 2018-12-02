@@ -41,6 +41,7 @@ class __Packet(object):
 
 
 class Packet(__Packet):
+
     def __init__(self, packet):
         super().__init__(packet=packet)
 
@@ -81,6 +82,7 @@ class Packet(__Packet):
 
 
 class ARPPacket(Packet):
+
     def __init__(self, packet):
         super().__init__(packet=packet)
 
@@ -137,6 +139,7 @@ class ARPPacket(Packet):
 
 
 class ICMPPacket(Packet):
+
     def __init__(self, packet):
         super().__init__(packet=packet)
         try:
@@ -184,6 +187,7 @@ class ICMPPacket(Packet):
 
 
 class IPPacket(ICMPPacket):
+
     def __init__(self, packet):
         super().__init__(packet=packet)
         try:

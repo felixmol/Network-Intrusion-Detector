@@ -27,11 +27,10 @@
 # SOFTWARE.
 #
 
-
+from time import sleep
+import multiprocessing
 import socket
 import json
-from time import sleep
-from multiprocessing import Process
 
 
 class SendingFlowsException(Exception):
@@ -64,9 +63,9 @@ def send_data(address, port, flows):
             raise SendingFlowsException(str(e))
 
 
-class FlowSender(Process):
+class FlowSender(multiprocessing.Process):
 
-    def __init__(self, address: str, port: int, interval: int, data):
+    def __init__(self, address: str, port: int, interval: int, data: multiprocessing.Queue):
         super().__init__(name="Flow sending process")
 
         self.__address = address if check_ipv4_address(address) else "127.0.0.1"
@@ -75,15 +74,20 @@ class FlowSender(Process):
         self.__data = data
 
     def run(self):
-        while 1:
-            try:
-                sleep(self.__interval)
-                if len(self.__data.keys()) != 0:
-                    try:
-                        send_data(address=self.__address, port=self.__port, flows=self.__data.copy())
-                        self.__data.clear()
-                    except SendingFlowsException as ex:
-                        print(str(ex))
-                        pass
-            except (Exception, KeyboardInterrupt):
-                break
+        try:
+            while 1:
+                try:
+                    sleep(self.__interval)
+
+                    flows = self.__data.get()
+
+                    if len(flows.keys()) is not 0:
+                        try:
+                            send_data(address=self.__address, port=self.__port, flows=flows)
+                        except SendingFlowsException as ex:
+                            print(str(ex))
+                            pass
+                except (Exception, KeyboardInterrupt):
+                    break
+        except KeyboardInterrupt:
+            pass

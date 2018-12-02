@@ -27,11 +27,9 @@
 # SOFTWARE.
 #
 
-import json
-import socketserver
 from queue import Queue
-
-
+import socketserver
+import json
 # import deepanalyser
 
 
@@ -108,8 +106,8 @@ if __name__ == "__main__":
 
     deep_analyser = None
     # if deep_analysis_service_use:
-    # deep_analyser = deepanalyser.DeepAnalyser(flow_queue)
-    # deep_analyser.start()
+        # deep_analyser = deepanalyser.DeepAnalyser(flow_queue)
+        # deep_analyser.start()
 
     sock_server = socketserver.TCPServer(("", 8888), CollectorStreamHandler)
     try:

@@ -27,13 +27,12 @@
 # SOFTWARE.
 #
 
+from threading import Thread
+from sklearn.preprocessing import MinMaxScaler
+import numpy
+import keras
 import csv
 import json
-from threading import Thread
-
-import keras
-import numpy
-from sklearn.preprocessing import MinMaxScaler
 
 
 class DeepAnalyserInitError(Exception):
@@ -41,6 +40,7 @@ class DeepAnalyserInitError(Exception):
 
 
 class DeepAnalyser(Thread):
+
     def __init__(self, queue):
         super().__init__(name="Deep analysis process")
         print("* Deep analyser initialisation ...")
@@ -81,17 +81,17 @@ class DeepAnalyser(Thread):
                     data_line = numpy.array(",".join(flow_list))
 
                     print(data_line)
-                #                    data_line.astype(float)
-                #                    data_line = data_line.reshape([1, 16])
-                #                    data_line = self.__scaler.transform(data_line)
-                #
-                #                    data_line = data_line.reshape([1, 16, 1, 1])
+#                    data_line.astype(float)
+#                    data_line = data_line.reshape([1, 16])
+#                    data_line = self.__scaler.transform(data_line)
+#
+#                    data_line = data_line.reshape([1, 16, 1, 1])
 
-                #                    print("--- Prediction ---")
-                #                    print(self.__model.predict(data_line, headers=['Analysis', 'Backdoor', 'DoS', 'Exploits', 'Fuzzers',
-                #                                                                   'Generic', 'Normal', 'Reconnaissance', 'Shellcode',
-                #                                                                   'Worms']))
-                #                    print("--- \t ---")
+#                    print("--- Prediction ---")
+#                    print(self.__model.predict(data_line, headers=['Analysis', 'Backdoor', 'DoS', 'Exploits', 'Fuzzers',
+#                                                                   'Generic', 'Normal', 'Reconnaissance', 'Shellcode',
+#                                                                   'Worms']))
+#                    print("--- \t ---")
             except (KeyboardInterrupt):
                 break
 

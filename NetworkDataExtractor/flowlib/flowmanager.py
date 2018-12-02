@@ -27,11 +27,9 @@
 # SOFTWARE.
 #
 
-import multiprocessing
 from threading import Timer
-
 import flowlib
-
+import multiprocessing
 
 class FlowManager(object):
 
@@ -192,7 +190,7 @@ class FlowManager(object):
                                                                                                0]].dstport)))
                         elif 'ICMP' in l4_protocol[0]:
                             flow = flowlib.ICMPFlow(self.__next_id, pkt.get_source_ip(), pkt.get_destination_ip(), int(
-                                l4_protocol[1]))
+                                                    l4_protocol[1]))
                             aggregation = flow.aggregate(pkt,
                                                          counters=self.counter_calculation(packet.ip.src, packet.ip.dst,
                                                                                            0, 0))
@@ -203,8 +201,7 @@ class FlowManager(object):
                             aggregation = flow.aggregate(pkt,
                                                          counters=self.counter_calculation(packet.ip.src, packet.ip.dst,
                                                                                            int(packet[
-                                                                                                   l4_protocol[
-                                                                                                       0]].srcport),
+                                                                                                   l4_protocol[0]].srcport),
                                                                                            int(packet[l4_protocol[
                                                                                                0]].dstport)))
 

@@ -27,16 +27,18 @@
 # SOFTWARE.
 #
 
-import json
-import time
-
-from flowlib.consts import CONNECTION_FLAGS
-from flowlib.consts import ConnectionState
 from flowlib.consts import Direction
 from flowlib.consts import Flag
+from flowlib.consts import ConnectionState
+
+from flowlib.consts import CONNECTION_FLAGS
+
+from flowlib.packet import Packet
 from flowlib.packet import ARPPacket
 from flowlib.packet import IPPacket
-from flowlib.packet import Packet
+
+import time
+import json
 
 
 def get_current_milli():
@@ -48,6 +50,7 @@ class FlowInitException(Exception):
 
 
 class __Flow(object):
+
     def __init__(self):
         super().__init__()
 
@@ -170,7 +173,7 @@ class ARPFlow(Flow):
 
             self._source_to_destination_packet_number = 0
             self._destination_to_source_packet_number = 0
-            self._total_packet = self._source_to_destination_packet_number + self. \
+            self._total_packet = self._source_to_destination_packet_number + self.\
                 _destination_to_source_packet_number
 
             self._request = False
@@ -200,9 +203,9 @@ class ARPFlow(Flow):
             self._destination_to_source_size_bytes += size
 
         self._mean_packet_size_from_source = self._source_to_destination_size_bytes / (self.
-                                                                                       _source_to_destination_packet_number if self._source_to_destination_packet_number > 0 else 1)
+            _source_to_destination_packet_number if self._source_to_destination_packet_number > 0 else 1)
         self._mean_packet_size_from_destination = self._destination_to_source_size_bytes / (self.
-                                                                                            _destination_to_source_packet_number if self._destination_to_source_packet_number > 0 else 1)
+            _destination_to_source_packet_number if self._destination_to_source_packet_number > 0 else 1)
 
     def _add_packet(self, packet: ARPPacket) -> None:
         """
@@ -292,6 +295,7 @@ class ARPFlow(Flow):
 
 
 class ICMPFlow(Flow):
+
     def __init__(self, flow_id: int, source_ip: str, destination_ip: str, transport_protocol: int):
         super().__init__(flow_id=flow_id)
 
@@ -314,7 +318,7 @@ class ICMPFlow(Flow):
 
             self._source_to_destination_packet_number = 0
             self._destination_to_source_packet_number = 0
-            self._total_packet = self._source_to_destination_packet_number + self. \
+            self._total_packet = self._source_to_destination_packet_number + self.\
                 _destination_to_source_packet_number
 
             self._count_same_destination_address = 0
@@ -341,9 +345,9 @@ class ICMPFlow(Flow):
             self._destination_to_source_size_bytes += size
 
         self._mean_packet_size_from_source = self._source_to_destination_size_bytes / (self.
-                                                                                       _source_to_destination_packet_number if self._source_to_destination_packet_number > 0 else 1)
+                _source_to_destination_packet_number if self._source_to_destination_packet_number > 0 else 1)
         self._mean_packet_size_from_destination = self._destination_to_source_size_bytes / (self.
-                                                                                            _destination_to_source_packet_number if self._destination_to_source_packet_number > 0 else 1)
+                _destination_to_source_packet_number if self._destination_to_source_packet_number > 0 else 1)
 
     def _ttl_actualisation(self, ttl: int, direction: Direction):
         self._min_ttl = self._min_ttl if ttl >= self._min_ttl and self._packet_list != [] else ttl
@@ -451,10 +455,10 @@ class ICMPFlow(Flow):
 
 
 class IPFlow(ICMPFlow):
+
     def __init__(self, flow_id: int, source_ip: str, destination_ip: str, source_port: int, destination_port: int,
                  transport_protocol: int, app_protocol: int = None):
-        super().__init__(flow_id=flow_id, source_ip=source_ip, destination_ip=destination_ip,
-                         transport_protocol=transport_protocol)
+        super().__init__(flow_id=flow_id, source_ip=source_ip, destination_ip=destination_ip, transport_protocol=transport_protocol)
 
         try:
             self._source_port = source_port
