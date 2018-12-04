@@ -30,6 +30,8 @@
 from queue import Queue
 import socketserver
 import json
+import argparse
+import sys
 # import deepanalyser
 
 
@@ -91,13 +93,16 @@ class CollectorStreamHandler(socketserver.StreamRequestHandler):
                 print("[-] Connection closed by " + str(self.client_address) + "\n")
 
 
-if __name__ == "__main__":
-    # parser = argparse.ArgumentParser(description='Network feature extractor for RaspberryPi')
-    # parser.add_argument("-a", "--server-address", dest="server_address", required=True, type=str, help="Address of the
-    # extractor")
-    # parser.add_argument("-p", "--server-port", dest="server_port", required=True, type=int, help="Listening port of
-    # the collector")
-    # args = parser.parse_args(sys.argv)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Network feature extractor for RaspberryPi')
+    parser.add_argument("-c", "--config", dest="config", required=False, type=str, help="Config file path\nThis must "
+                                                                                        "be an absolute path otherwise "
+                                                                                        "config cannot be loaded")
+    args = parser.parse_args(sys.argv)
+    conf = None
+
+    if args.config is not None and args.config != "":
+        conf = args.config
 
     authorized_addresses = ["127.0.0.1"]
     deep_analysis_service_use = False
@@ -106,8 +111,8 @@ if __name__ == "__main__":
 
     deep_analyser = None
     # if deep_analysis_service_use:
-        # deep_analyser = deepanalyser.DeepAnalyser(flow_queue)
-        # deep_analyser.start()
+    # deep_analyser = deepanalyser.DeepAnalyser(flow_queue)
+    # deep_analyser.start()
 
     sock_server = socketserver.TCPServer(("", 8888), CollectorStreamHandler)
     try:

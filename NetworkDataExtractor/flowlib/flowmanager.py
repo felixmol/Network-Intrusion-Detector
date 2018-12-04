@@ -28,13 +28,17 @@
 #
 
 from threading import Timer
+from idsconfigparser import SettingParser
 import flowlib
 import multiprocessing
 
+
 class FlowManager(object):
 
-    def __init__(self):
+    def __init__(self, config: SettingParser = SettingParser()):
         super().__init__()
+
+        self.__setting_parser = config
 
         self.__flow_list = dict()
         self.__send_list = multiprocessing.Queue()
@@ -51,8 +55,16 @@ class FlowManager(object):
         self.__flow_duration = 30
         self.__number_of_flow = 0
 
-        self.__sending_service = flowlib.FlowSender("127.0.0.1", 8888, 3, self.__send_list)
-        self.__deletion_service = flowlib.FlowDeletion(70, self.__remove_list, self.__last_ids_removed)
+        self.__sending_service = flowlib.FlowSender(
+            address=self.__setting_parser.get_str_value("COLLECTOR", "IpAddress", "127.0.0.1"),
+            port=self.__setting_parser.get_int_value("COLLECTOR", "Port", 8888),
+            interval=self.__setting_parser.get_int_value("EXTRACTOR", "SendingInterval", 5),
+            data=self.__send_list)
+
+        self.__deletion_service = flowlib.FlowDeletion(
+            interval=self.__setting_parser.get_int_value("EXTRACTOR", "DeletionInterval", 60),
+            data=self.__remove_list,
+            id_list=self.__last_ids_removed)
 
     def __next_flow_id(self):
         __next_id = self.__last_id_assigned + 1

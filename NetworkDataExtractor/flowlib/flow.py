@@ -162,7 +162,6 @@ class ARPFlow(Flow):
         try:
             self._source_ip = source_ip
             self._destination_ip = destination_ip
-            self._destination_mac = None
 
             self._source_to_destination_size_bytes = 0
             self._destination_to_source_size_bytes = 0

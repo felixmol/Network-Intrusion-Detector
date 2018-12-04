@@ -28,19 +28,38 @@
 #
 
 from datetime import datetime
+from idsconfigparser import SettingParser
 import pyshark
-# import argparse
 import flowlib
+import argparse
+import sys
+import json
 
 
-def main(iface: str):
-    flow_manager = flowlib.FlowManager()
+def main(config_filename: str):
+    setting_parser = SettingParser(filename=config_filename)
+    print("Config parser error : " + setting_parser.error)
+
+    interface = setting_parser.get_str_value("EXTRACTOR", "Interface", "")
+
+    output_file = setting_parser.get_str_value("EXTRACTOR", "OutputFilePath", "") if setting_parser.get_bool_value(
+        "EXTRACTOR", "OutputFile", False) else None
+    if output_file == "":
+        output_file = None
+
+    capture_filters = setting_parser.get_str_value("EXTRACTOR", "CaptureFilters", "")
+    if capture_filters == "":
+        capture_filters = None
+
+    active_debug = setting_parser.get_bool_value("EXTRACTOR", "Debug", False)
+
+    flow_manager = flowlib.FlowManager(setting_parser)
     flow_manager.start_service()
 
     start_time = datetime.now()
 
-    capture = pyshark.LiveCapture(interface=iface)  # args.iface)
-    capture.set_debug(True)
+    capture = pyshark.LiveCapture(interface=interface, output_file=output_file, capture_filter=capture_filters)
+    capture.set_debug(active_debug)
 
     try:
         capture.apply_on_packets(flow_manager.packet_analysis)
@@ -51,21 +70,25 @@ def main(iface: str):
         end_time = datetime.now()
         flow_manager.stop_service()
 
-        print("\nBegining :\n\t" + str(start_time))
+        print("\nStart :\n\t" + str(start_time))
         print("Record duration :\n\t" + str(end_time - start_time))
 
 
 if __name__ == '__main__':
-    # parser = argparse.ArgumentParser(description='Network feature extractor for RaspberryPi')
-    # parser.add_argument("-i", "--iface", dest="iface", required=True, type=str, help="Network interface to sniff")
-    # parser.add_argument("-a", "--server-address", dest="server_address", required=True, type=str, help="Address of the
-    # collector")
-    # parser.add_argument("-p", "--server-port", dest="server_port", required=True, type=int, help="Listening port of
-    # the collector")
-    # parser.add_argument("-s", "--sending-interval", dest="sending_interval", required=True, type=int, help="Sending
-    # interval\nMetric: second")
-    # parser.add_argument("-d", "--deletion-interval", dest="deletion_interval", type=int, help="Flow deletion interval
-    # \nMetric: second\nDefault: 300")
-    # args = parser.parse_args(sys.argv)
+    parser = argparse.ArgumentParser(description='Network feature extractor for RaspberryPi')
+    parser.add_argument("-c", "--config", dest="config", required=False, type=str, help="Config file path\nThis must "
+                                                                                        "be an absolute path otherwise "
+                                                                                        "the config cannot be loaded")
+    parser.add_argument("-e", "--heuristics", dest="heuristics", required=False, type=str,
+                        help="JSON file of containing each feature id\nThis must be an absolute path otherwise the "
+                             "config cannot be loaded\ne.g. {\n\t'sourceMac': 1,\n\t'destinationMac': 2, \n\t...\n}")
+    args = parser.parse_args(sys.argv)
+    conf = None
+    heuristics = None
 
-    main('wlp2s0')
+    if args.config is not None and args.config != "":
+        conf = args.config
+    if args.heuristics is not None and args.heuristics != "":
+        heuristics = json.load(open(args.config, mode='r'))
+
+    main(conf)

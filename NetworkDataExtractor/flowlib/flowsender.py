@@ -65,7 +65,8 @@ def send_data(address, port, flows):
 
 class FlowSender(multiprocessing.Process):
 
-    def __init__(self, address: str, port: int, interval: int, data: multiprocessing.Queue):
+    def __init__(self, address: str = "127.0.0.1", port: int = 8888, interval: int = 5,
+                 data: multiprocessing.Queue = None):
         super().__init__(name="Flow sending process")
 
         self.__address = address if check_ipv4_address(address) else "127.0.0.1"
@@ -74,20 +75,17 @@ class FlowSender(multiprocessing.Process):
         self.__data = data
 
     def run(self):
-        try:
-            while 1:
-                try:
-                    sleep(self.__interval)
+        while 1:
+            try:
+                sleep(self.__interval)
 
-                    flows = self.__data.get()
+                flows = self.__data.get()
 
-                    if len(flows.keys()) is not 0:
-                        try:
-                            send_data(address=self.__address, port=self.__port, flows=flows)
-                        except SendingFlowsException as ex:
-                            print(str(ex))
-                            pass
-                except (Exception, KeyboardInterrupt):
-                    break
-        except KeyboardInterrupt:
-            pass
+                if len(flows.keys()) is not 0:
+                    try:
+                        send_data(address=self.__address, port=self.__port, flows=flows)
+                    except SendingFlowsException as ex:
+                        print(str(ex))
+                        pass
+            except (Exception, KeyboardInterrupt):
+                break

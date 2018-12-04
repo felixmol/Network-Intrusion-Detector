@@ -2,7 +2,7 @@
 #
 # !/usr/bin/env python3
 #
-# flow deletion Copyright(c) 2018 Félix Molina.
+# idsconfigparser package Copyright(c) 2018 Félix Molina.
 #
 # Many thanks to Télécom SudParis (http://www.telecom-sudparis.eu)
 #
@@ -27,27 +27,4 @@
 # SOFTWARE.
 #
 
-from time import sleep
-import multiprocessing
-
-
-class FlowDeletion(multiprocessing.Process):
-
-    def __init__(self, interval: int = 60, data: multiprocessing.Queue = None, id_list: multiprocessing.Queue = None):
-        super().__init__(name="Flow deletion process")
-
-        self.__interval = interval
-        self.__data = data
-        self.__removed_ids = id_list
-
-    def run(self):
-        while 1:
-            try:
-                sleep(self.__interval)
-
-                flows = self.__data.get()
-                for id in flows.keys():
-                    self.__removed_ids.put(id)
-                # Inscrire dans BDD
-            except (Exception, KeyboardInterrupt):
-                break
+from idsconfigparser.settingparser import SettingParser
