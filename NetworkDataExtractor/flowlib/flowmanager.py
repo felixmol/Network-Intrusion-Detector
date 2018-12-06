@@ -39,6 +39,7 @@ class FlowManager(object):
         super().__init__()
 
         self.__setting_parser = config
+        self.__features_list = config.get_features()
 
         self.__flow_list = dict()
         self.__send_list = multiprocessing.Queue()
@@ -186,13 +187,20 @@ class FlowManager(object):
             try:
                 if aggregation is not True:
                     if isinstance(pkt, flowlib.ARPPacket):
-                        flow = flowlib.ARPFlow(self.__next_id, pkt.get_source_mac(), pkt.get_source_ip(), pkt.
-                                               get_destination_ip())
+                        flow = flowlib.ARPFlow(flow_id=self.__next_id, source_mac=pkt.get_source_mac(),
+                                               source_ip=pkt.get_source_ip(), destination_ip=pkt.get_destination_ip(),
+                                               features_list=self.__features_list)
                         aggregation = flow.aggregate(pkt)
                     else:
                         if 'TCP' in l4_protocol[0]:
-                            flow = flowlib.TCPFlow(self.__next_id, pkt.get_source_ip(), pkt.get_destination_ip(), pkt.
-                                                   get_source_port(), pkt.get_destination_port(), int(l4_protocol[1]))
+                            flow = flowlib.TCPFlow(flow_id=self.__next_id, source_mac=pkt.get_source_mac(),
+                                                   destination_mac=pkt.get_destination_mac(),
+                                                   source_ip=pkt.get_source_ip(),
+                                                   destination_ip=pkt.get_destination_ip(),
+                                                   source_port=pkt.get_source_port(),
+                                                   destination_port=pkt.get_destination_port(),
+                                                   transport_protocol=int(l4_protocol[1]),
+                                                   features_list=self.__features_list)
                             aggregation = flow.aggregate(pkt,
                                                          counters=self.counter_calculation(packet.ip.src, packet.ip.dst,
                                                                                            int(packet[
@@ -201,19 +209,31 @@ class FlowManager(object):
                                                                                            int(packet[l4_protocol[
                                                                                                0]].dstport)))
                         elif 'ICMP' in l4_protocol[0]:
-                            flow = flowlib.ICMPFlow(self.__next_id, pkt.get_source_ip(), pkt.get_destination_ip(), int(
-                                                    l4_protocol[1]))
+                            flow = flowlib.ICMPFlow(flow_id=self.__next_id, source_mac=pkt.get_source_mac(),
+                                                   destination_mac=pkt.get_destination_mac(),
+                                                   source_ip=pkt.get_source_ip(),
+                                                   destination_ip=pkt.get_destination_ip(),
+                                                   transport_protocol=int(l4_protocol[1]),
+                                                   features_list=self.__features_list)
                             aggregation = flow.aggregate(pkt,
                                                          counters=self.counter_calculation(packet.ip.src, packet.ip.dst,
                                                                                            0, 0))
                         else:
-                            flow = flowlib.IPFlow(self.__next_id, pkt.get_source_ip(), pkt.get_destination_ip(), pkt.
-                                                  get_source_port(), pkt.get_destination_port(), int(l4_protocol[1]))
+                            flow = flowlib.IPFlow(flow_id=self.__next_id, source_mac=pkt.get_source_mac(),
+                                                   destination_mac=pkt.get_destination_mac(),
+                                                   source_ip=pkt.get_source_ip(),
+                                                   destination_ip=pkt.get_destination_ip(),
+                                                   source_port=pkt.get_source_port(),
+                                                   destination_port=pkt.get_destination_port(),
+                                                   transport_protocol=int(l4_protocol[1]),
+                                                   features_list=self.__features_list)
 
                             aggregation = flow.aggregate(pkt,
                                                          counters=self.counter_calculation(packet.ip.src, packet.ip.dst,
-                                                                                           int(packet[
-                                                                                                   l4_protocol[0]].srcport),
+                                                                                           int(
+                                                                                               packet[
+                                                                                                   l4_protocol[0]
+                                                                                               ].srcport),
                                                                                            int(packet[l4_protocol[
                                                                                                0]].dstport)))
 

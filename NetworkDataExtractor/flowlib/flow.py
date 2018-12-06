@@ -51,13 +51,19 @@ class FlowInitException(Exception):
 
 class __Flow(object):
 
-    def __init__(self):
+    def __init__(self, features_list: list = None):
         super().__init__()
+        self._features_list = features_list
+        self._all_features = False
+
+        if "all" in self._features_list or self._features_list is None or self._features_list is []:
+            self._features_list = ["all"]
+            self._all_features = True
 
 
 class Flow(__Flow):
-    def __init__(self, flow_id: int, source_mac: str = None, destination_mac: str = None):
-        super().__init__()
+    def __init__(self, flow_id: int, features_list: list = None, source_mac: str = None, destination_mac: str = None):
+        super().__init__(features_list=features_list)
 
         try:
             self._id = flow_id
@@ -87,6 +93,8 @@ class Flow(__Flow):
             self._packet_list = []
 
             self._closed = False
+
+            self._features = {}  # Normally not empty
         except Exception as e:
             raise FlowInitException(str(e))
 
@@ -119,6 +127,9 @@ class Flow(__Flow):
         self._packet_list += [packet]
         self._total_packet = len(self._packet_list)
 
+    def _features_object_update(self):
+        pass
+
     def _hash(self):
         pass
 
@@ -140,7 +151,19 @@ class Flow(__Flow):
         return False
 
     def to_dict_format(self):
-        pass
+        self._features_object_update()
+
+        if self._all_features:
+            return self._features
+
+        features = {"flowid": self._features["flowid"]}
+        for feature in self._features_list:
+            try:
+                features[feature] = self._features[feature]
+            except KeyError:
+                pass
+
+        return features
 
     def to_json_format(self):
         pass
@@ -156,8 +179,9 @@ class Flow(__Flow):
 
 
 class ARPFlow(Flow):
-    def __init__(self, flow_id: int, source_mac: str, source_ip: str, destination_ip: str):
-        super().__init__(flow_id=flow_id, source_mac=source_mac, destination_mac=None)
+    def __init__(self, flow_id: int, features_list: list = None, source_mac: str = None, source_ip: str = None,
+                 destination_ip: str = None):
+        super().__init__(flow_id=flow_id, features_list=features_list, source_mac=source_mac, destination_mac=None)
 
         try:
             self._source_ip = source_ip
@@ -177,6 +201,35 @@ class ARPFlow(Flow):
 
             self._request = False
             self._reply = False
+
+            self._features = {
+                "flowid": self._id,
+                "sourcemac": self._source_mac,
+                "destinationmac": self._destination_mac,
+                "sourceip": self._source_ip,
+                "destinationip": self._destination_ip,
+                "arprequest": self._request,
+                "arpreply": self._reply,
+                "flowstarttime": self._flow_start_time,
+                "flowendtime": self._flow_end_time,
+                "flowdurationmilliseconds": self._flow_duration_milliseconds,
+                "deltatimebetweenpackets": self._delta_time_between_packets,
+                "flowrate": self._rate,
+                "minsize": self._min_size,
+                "maxsize": self._max_size,
+                "packetsizes": self._packet_sizes,
+                "deltasizebytes": self._delta_size_bytes,
+                "sumsizebytes": self._sum_size_bytes,
+                "meanpacketsizefromsource": self._mean_packet_size_from_source,
+                "meanPacketSizeFromDestination": self._mean_packet_size_from_destination,
+                "sourcetodestinationsizebytes": self._source_to_destination_size_bytes,
+                "destinationtosourcesizebytes": self._destination_to_source_size_bytes,
+                "sourcetodestinationpacketnumber": self._source_to_destination_packet_number,
+                "destinationtosourcepacketnumber": self._destination_to_source_packet_number,
+                "totalpacket": self._total_packet,
+                "direction": self._direction.value,
+                "closed": self._closed
+            }
 
             self._hash_src_to_dst, self._hash_dst_to_src = self._hash()
         except Exception as e:
@@ -201,10 +254,10 @@ class ARPFlow(Flow):
         else:
             self._destination_to_source_size_bytes += size
 
-        self._mean_packet_size_from_source = self._source_to_destination_size_bytes / (self.
-            _source_to_destination_packet_number if self._source_to_destination_packet_number > 0 else 1)
-        self._mean_packet_size_from_destination = self._destination_to_source_size_bytes / (self.
-            _destination_to_source_packet_number if self._destination_to_source_packet_number > 0 else 1)
+        self._mean_packet_size_from_source = self._source_to_destination_size_bytes / (
+            self._source_to_destination_packet_number if self._source_to_destination_packet_number > 0 else 1)
+        self._mean_packet_size_from_destination = self._destination_to_source_size_bytes / (
+            self._destination_to_source_packet_number if self._destination_to_source_packet_number > 0 else 1)
 
     def _add_packet(self, packet: ARPPacket) -> None:
         """
@@ -220,32 +273,32 @@ class ARPFlow(Flow):
         else:
             self._destination_to_source_packet_number += 1
 
-    def to_dict_format(self):
-        return {
-            "flowId": self._id,
-            "sourceMac": self._source_mac,
-            "destinationMac": self._destination_mac,
-            "sourceIp": self._source_ip,
-            "destinationIp": self._destination_ip,
-            "request": self._request,
-            "reply": self._reply,
-            "flowStartTime": self._flow_start_time,
-            "flowEndTime": self._flow_end_time,
-            "flowDurationMilliseconds": self._flow_duration_milliseconds,
-            "deltaTimeBetweenPackets": self._delta_time_between_packets,
-            "flowRate": self._rate,
-            "minSize": self._min_size,
-            "maxSize": self._max_size,
-            "packetSizes": self._packet_sizes,
-            "deltaSizeBytes": self._delta_size_bytes,
-            "sumSizeBytes": self._sum_size_bytes,
-            "meanPacketSizeFromSource": self._mean_packet_size_from_source,
+    def _features_object_update(self):
+        self._features = {
+            "flowid": self._id,
+            "sourcemac": self._source_mac,
+            "destinationmac": self._destination_mac,
+            "sourceip": self._source_ip,
+            "destinationip": self._destination_ip,
+            "arprequest": self._request,
+            "arpreply": self._reply,
+            "flowstarttime": self._flow_start_time,
+            "flowendtime": self._flow_end_time,
+            "flowdurationmilliseconds": self._flow_duration_milliseconds,
+            "deltatimebetweenpackets": self._delta_time_between_packets,
+            "flowrate": self._rate,
+            "minsize": self._min_size,
+            "maxsize": self._max_size,
+            "packetsizes": self._packet_sizes,
+            "deltasizebytes": self._delta_size_bytes,
+            "sumsizebytes": self._sum_size_bytes,
+            "meanpacketsizefromsource": self._mean_packet_size_from_source,
             "meanPacketSizeFromDestination": self._mean_packet_size_from_destination,
-            "sourceToDestinationSizeBytes": self._source_to_destination_size_bytes,
-            "destinationToSourceSizeBytes": self._destination_to_source_size_bytes,
-            "sourceToDestinationPacketNumber": self._source_to_destination_packet_number,
-            "destinationToSourcePacketNumber": self._destination_to_source_packet_number,
-            "totalPacket": self._total_packet,
+            "sourcetodestinationsizebytes": self._source_to_destination_size_bytes,
+            "destinationtosourcesizebytes": self._destination_to_source_size_bytes,
+            "sourcetodestinationpacketnumber": self._source_to_destination_packet_number,
+            "destinationtosourcepacketnumber": self._destination_to_source_packet_number,
+            "totalpacket": self._total_packet,
             "direction": self._direction.value,
             "closed": self._closed
         }
@@ -295,8 +348,10 @@ class ARPFlow(Flow):
 
 class ICMPFlow(Flow):
 
-    def __init__(self, flow_id: int, source_ip: str, destination_ip: str, transport_protocol: int):
-        super().__init__(flow_id=flow_id)
+    def __init__(self, flow_id: int, features_list: list = None, source_mac: str = None, destination_mac: str = None,
+                 source_ip: str = None, destination_ip: str = None, transport_protocol: int = None):
+        super().__init__(flow_id=flow_id, features_list=features_list, source_mac=source_mac,
+                         destination_mac=destination_mac)
 
         try:
             self._source_ip = source_ip
@@ -323,6 +378,40 @@ class ICMPFlow(Flow):
             self._count_same_destination_address = 0
             self._count_same_source_destination_address = 0
 
+            self._features = {
+                "flowid": self._id,
+                "sourcemac": self._source_mac,
+                "destinationmac": self._destination_mac,
+                "sourceip": self._source_ip,
+                "destinationip": self._destination_ip,
+                "transportProtocol": self._transport_protocol,
+                "flowstarttime": self._flow_start_time,
+                "flowendtime": self._flow_end_time,
+                "flowdurationmilliseconds": self._flow_duration_milliseconds,
+                "deltatimebetweenpackets": self._delta_time_between_packets,
+                "flowrate": self._rate,
+                "minsize": self._min_size,
+                "maxsize": self._max_size,
+                "packetsizes": self._packet_sizes,
+                "deltasizebytes": self._delta_size_bytes,
+                "sumsizebytes": self._sum_size_bytes,
+                "meanpacketsizefromsource": self._mean_packet_size_from_source,
+                "meanPacketSizeFromDestination": self._mean_packet_size_from_destination,
+                "sourcetodestinationsizebytes": self._source_to_destination_size_bytes,
+                "destinationtosourcesizebytes": self._destination_to_source_size_bytes,
+                "sourcetodestinationpacketnumber": self._source_to_destination_packet_number,
+                "destinationtosourcepacketnumber": self._destination_to_source_packet_number,
+                "totalpacket": self._total_packet,
+                "minttl": self._min_ttl,
+                "maxttl": self._max_ttl,
+                "sourcetodestinationttl": self._source_to_destination_ttl,
+                "destinationtosourcettl": self._destination_to_source_ttl,
+                "direction": self._direction.value,
+                "countsamedestinationaddress": self._count_same_destination_address,
+                "countsamesourcedestinationaddress": self._count_same_source_destination_address,
+                "closed": self._closed
+            }
+
             self._hash_src_to_dst, self._hash_dst_to_src = self.__hash()
         except Exception as e:
             raise FlowInitException(str(e))
@@ -343,10 +432,10 @@ class ICMPFlow(Flow):
         else:
             self._destination_to_source_size_bytes += size
 
-        self._mean_packet_size_from_source = self._source_to_destination_size_bytes / (self.
-                _source_to_destination_packet_number if self._source_to_destination_packet_number > 0 else 1)
-        self._mean_packet_size_from_destination = self._destination_to_source_size_bytes / (self.
-                _destination_to_source_packet_number if self._destination_to_source_packet_number > 0 else 1)
+        self._mean_packet_size_from_source = self._source_to_destination_size_bytes / (
+            self._source_to_destination_packet_number if self._source_to_destination_packet_number > 0 else 1)
+        self._mean_packet_size_from_destination = self._destination_to_source_size_bytes / (
+            self._destination_to_source_packet_number if self._destination_to_source_packet_number > 0 else 1)
 
     def _ttl_actualisation(self, ttl: int, direction: Direction):
         self._min_ttl = self._min_ttl if ttl >= self._min_ttl and self._packet_list != [] else ttl
@@ -375,6 +464,41 @@ class ICMPFlow(Flow):
         else:
             self._destination_to_source_packet_number += 1
 
+    def _features_object_update(self):
+        self._features = {
+            "flowid": self._id,
+            "sourcemac": self._source_mac,
+            "destinationmac": self._destination_mac,
+            "sourceip": self._source_ip,
+            "destinationip": self._destination_ip,
+            "transportProtocol": self._transport_protocol,
+            "flowstarttime": self._flow_start_time,
+            "flowendtime": self._flow_end_time,
+            "flowdurationmilliseconds": self._flow_duration_milliseconds,
+            "deltatimebetweenpackets": self._delta_time_between_packets,
+            "flowrate": self._rate,
+            "minsize": self._min_size,
+            "maxsize": self._max_size,
+            "packetsizes": self._packet_sizes,
+            "deltasizebytes": self._delta_size_bytes,
+            "sumsizebytes": self._sum_size_bytes,
+            "meanpacketsizefromsource": self._mean_packet_size_from_source,
+            "meanPacketSizeFromDestination": self._mean_packet_size_from_destination,
+            "sourcetodestinationsizebytes": self._source_to_destination_size_bytes,
+            "destinationtosourcesizebytes": self._destination_to_source_size_bytes,
+            "sourcetodestinationpacketnumber": self._source_to_destination_packet_number,
+            "destinationtosourcepacketnumber": self._destination_to_source_packet_number,
+            "totalpacket": self._total_packet,
+            "minttl": self._min_ttl,
+            "maxttl": self._max_ttl,
+            "sourcetodestinationttl": self._source_to_destination_ttl,
+            "destinationtosourcettl": self._destination_to_source_ttl,
+            "direction": self._direction.value,
+            "countsamedestinationaddress": self._count_same_destination_address,
+            "countsamesourcedestinationaddress": self._count_same_source_destination_address,
+            "closed": self._closed
+        }
+
     def __hash(self) -> (int, int):
         """
         Private personalized hashing method.
@@ -386,39 +510,6 @@ class ICMPFlow(Flow):
         string2 = self._destination_ip + self._source_ip + str(self._transport_protocol)
 
         return hash(string1), hash(string2)
-
-    def to_dict_format(self):
-        return {
-            "flowId": self._id,
-            "sourceIp": self._source_ip,
-            "destinationIp": self._destination_ip,
-            "transportProtocol": self._transport_protocol,
-            "flowStartTime": self._flow_start_time,
-            "flowEndTime": self._flow_end_time,
-            "flowDurationMilliseconds": self._flow_duration_milliseconds,
-            "deltaTimeBetweenPackets": self._delta_time_between_packets,
-            "flowRate": self._rate,
-            "minSize": self._min_size,
-            "maxSize": self._max_size,
-            "packetSizes": self._packet_sizes,
-            "deltaSizeBytes": self._delta_size_bytes,
-            "sumSizeBytes": self._sum_size_bytes,
-            "meanPacketSizeFromSource": self._mean_packet_size_from_source,
-            "meanPacketSizeFromDestination": self._mean_packet_size_from_destination,
-            "sourceToDestinationSizeBytes": self._source_to_destination_size_bytes,
-            "destinationToSourceSizeBytes": self._destination_to_source_size_bytes,
-            "sourceToDestinationPacketNumber": self._source_to_destination_packet_number,
-            "destinationToSourcePacketNumber": self._destination_to_source_packet_number,
-            "totalPacket": self._total_packet,
-            "minTTL": self._min_ttl,
-            "maxTTL": self._max_ttl,
-            "sourceToDestinationTTL": self._source_to_destination_ttl,
-            "destinationToSourceTTL": self._destination_to_source_ttl,
-            "direction": self._direction.value,
-            "countSameDestinationAddress": self._count_same_destination_address,
-            "countSameSourceDestinationAddress": self._count_same_source_destination_address,
-            "closed": self._closed
-        }
 
     def to_json_format(self):
         return json.dumps(self.to_dict_format(), ensure_ascii=True)
@@ -455,9 +546,12 @@ class ICMPFlow(Flow):
 
 class IPFlow(ICMPFlow):
 
-    def __init__(self, flow_id: int, source_ip: str, destination_ip: str, source_port: int, destination_port: int,
-                 transport_protocol: int, app_protocol: int = None):
-        super().__init__(flow_id=flow_id, source_ip=source_ip, destination_ip=destination_ip, transport_protocol=transport_protocol)
+    def __init__(self, flow_id: int, features_list: list = None, source_mac: str = None, destination_mac: str = None,
+                 source_ip: str = None, destination_ip: str = None, source_port: int  = None,
+                 destination_port: int = None, transport_protocol: int = None, app_protocol: int = None):
+        super().__init__(flow_id=flow_id, features_list=features_list, source_mac=source_mac,
+                         destination_mac=destination_mac, source_ip=source_ip, destination_ip=destination_ip,
+                         transport_protocol=transport_protocol)
 
         try:
             self._source_port = source_port
@@ -466,6 +560,44 @@ class IPFlow(ICMPFlow):
 
             self._count_same_source_address_destination_port = 0
             self._count_same_destination_address_source_port = 0
+
+            self._features = {
+                "flowid": self._id,
+                "sourcemac": self._source_mac,
+                "destinationmac": self._destination_mac,
+                "sourceip": self._source_ip,
+                "destinationip": self._destination_ip,
+                "sourcePort": self._source_port,
+                "destinationPort": self._destination_port,
+                "transportProtocol": self._transport_protocol,
+                "flowstarttime": self._flow_start_time,
+                "flowendtime": self._flow_end_time,
+                "flowdurationmilliseconds": self._flow_duration_milliseconds,
+                "deltatimebetweenpackets": self._delta_time_between_packets,
+                "flowrate": self._rate,
+                "minsize": self._min_size,
+                "maxsize": self._max_size,
+                "packetsizes": self._packet_sizes,
+                "deltasizebytes": self._delta_size_bytes,
+                "sumsizebytes": self._sum_size_bytes,
+                "meanpacketsizefromsource": self._mean_packet_size_from_source,
+                "meanPacketSizeFromDestination": self._mean_packet_size_from_destination,
+                "sourcetodestinationsizebytes": self._source_to_destination_size_bytes,
+                "destinationtosourcesizebytes": self._destination_to_source_size_bytes,
+                "sourcetodestinationpacketnumber": self._source_to_destination_packet_number,
+                "destinationtosourcepacketnumber": self._destination_to_source_packet_number,
+                "totalpacket": self._total_packet,
+                "minttl": self._min_ttl,
+                "maxttl": self._max_ttl,
+                "sourcetodestinationttl": self._source_to_destination_ttl,
+                "destinationtosourcettl": self._destination_to_source_ttl,
+                "direction": self._direction.value,
+                "countsamedestinationaddress": self._count_same_destination_address,
+                "countsamesourceaddressdestinationport": self._count_same_source_address_destination_port,
+                "countsamedestinationaddresssourceport": self._count_same_destination_address_source_port,
+                "countsamesourcedestinationaddress": self._count_same_source_destination_address,
+                "closed": self._closed
+            }
 
             self._hash_src_to_dst, self._hash_dst_to_src = self.__hash()
         except Exception as e:
@@ -477,6 +609,45 @@ class IPFlow(ICMPFlow):
         self._count_same_source_address_destination_port = counters["ct_dst_ltm"]
         self._count_same_destination_address_source_port = counters["ct_dst_ltm"]
         self._count_same_source_destination_address = counters["ct_dst_ltm"]
+
+    def _features_object_update(self):
+        self._features = {
+            "flowid": self._id,
+            "sourcemac": self._source_mac,
+            "destinationmac": self._destination_mac,
+            "sourceip": self._source_ip,
+            "destinationip": self._destination_ip,
+            "sourcePort": self._source_port,
+            "destinationPort": self._destination_port,
+            "transportProtocol": self._transport_protocol,
+            "flowstarttime": self._flow_start_time,
+            "flowendtime": self._flow_end_time,
+            "flowdurationmilliseconds": self._flow_duration_milliseconds,
+            "deltatimebetweenpackets": self._delta_time_between_packets,
+            "flowrate": self._rate,
+            "minsize": self._min_size,
+            "maxsize": self._max_size,
+            "packetsizes": self._packet_sizes,
+            "deltasizebytes": self._delta_size_bytes,
+            "sumsizebytes": self._sum_size_bytes,
+            "meanpacketsizefromsource": self._mean_packet_size_from_source,
+            "meanPacketSizeFromDestination": self._mean_packet_size_from_destination,
+            "sourcetodestinationsizebytes": self._source_to_destination_size_bytes,
+            "destinationtosourcesizebytes": self._destination_to_source_size_bytes,
+            "sourcetodestinationpacketnumber": self._source_to_destination_packet_number,
+            "destinationtosourcepacketnumber": self._destination_to_source_packet_number,
+            "totalpacket": self._total_packet,
+            "minttl": self._min_ttl,
+            "maxttl": self._max_ttl,
+            "sourcetodestinationttl": self._source_to_destination_ttl,
+            "destinationtosourcettl": self._destination_to_source_ttl,
+            "direction": self._direction.value,
+            "countsamedestinationaddress": self._count_same_destination_address,
+            "countsamesourceaddressdestinationport": self._count_same_source_address_destination_port,
+            "countsamedestinationaddresssourceport": self._count_same_destination_address_source_port,
+            "countsamesourcedestinationaddress": self._count_same_source_destination_address,
+            "closed": self._closed
+        }
 
     def __hash(self) -> (int, int):
         """
@@ -492,50 +663,14 @@ class IPFlow(ICMPFlow):
 
         return hash(string1), hash(string2)
 
-    def to_dict_format(self):
-        return {
-            "flowId": self._id,
-            "sourceIp": self._source_ip,
-            "destinationIp": self._destination_ip,
-            "sourcePort": self._source_port,
-            "destinationPort": self._destination_port,
-            "transportProtocol": self._transport_protocol,
-            "flowStartTime": self._flow_start_time,
-            "flowEndTime": self._flow_end_time,
-            "flowDurationMilliseconds": self._flow_duration_milliseconds,
-            "deltaTimeBetweenPackets": self._delta_time_between_packets,
-            "flowRate": self._rate,
-            "minSize": self._min_size,
-            "maxSize": self._max_size,
-            "packetSizes": self._packet_sizes,
-            "deltaSizeBytes": self._delta_size_bytes,
-            "sumSizeBytes": self._sum_size_bytes,
-            "meanPacketSizeFromSource": self._mean_packet_size_from_source,
-            "meanPacketSizeFromDestination": self._mean_packet_size_from_destination,
-            "sourceToDestinationSizeBytes": self._source_to_destination_size_bytes,
-            "destinationToSourceSizeBytes": self._destination_to_source_size_bytes,
-            "sourceToDestinationPacketNumber": self._source_to_destination_packet_number,
-            "destinationToSourcePacketNumber": self._destination_to_source_packet_number,
-            "totalPacket": self._total_packet,
-            "minTTL": self._min_ttl,
-            "maxTTL": self._max_ttl,
-            "sourceToDestinationTTL": self._source_to_destination_ttl,
-            "destinationToSourceTTL": self._destination_to_source_ttl,
-            "direction": self._direction.value,
-            "countSameDestinationAddress": self._count_same_destination_address,
-            "countSameSourceAddressDestinationPort": self._count_same_source_address_destination_port,
-            "countSameDestinationAddressSourcePort": self._count_same_destination_address_source_port,
-            "countSameSourceDestinationAddress": self._count_same_source_destination_address,
-            "closed": self._closed
-        }
-
 
 class TCPFlow(IPFlow):
-    def __init__(self, flow_id: int, source_ip: str, destination_ip: str, source_port: int, destination_port: int,
-                 transport_protocol: int, app_protocol: int = None):
-        super().__init__(flow_id=flow_id, source_ip=source_ip, destination_ip=destination_ip, source_port=source_port,
-                         destination_port=destination_port, transport_protocol=transport_protocol,
-                         app_protocol=app_protocol)
+    def __init__(self, flow_id: int, features_list: list = None, source_mac: str = None, destination_mac: str = None,
+                 source_ip: str = None, destination_ip: str = None, source_port: int = None,
+                 destination_port: int = None, transport_protocol: int = None, app_protocol: int = None):
+        super().__init__(flow_id=flow_id, features_list=features_list, source_mac=source_mac, destination_mac=destination_mac, source_ip=source_ip,
+                         destination_ip=destination_ip, source_port=source_port, destination_port=destination_port,
+                         transport_protocol=transport_protocol, app_protocol=app_protocol)
 
         self._flags = CONNECTION_FLAGS
         self._open = False

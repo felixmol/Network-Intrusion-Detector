@@ -27,7 +27,7 @@
 # SOFTWARE.
 #
 
-from threading import Thread
+from multiprocessing import Process
 from sklearn.preprocessing import MinMaxScaler
 import numpy
 import keras
@@ -39,7 +39,7 @@ class DeepAnalyserInitError(Exception):
     pass
 
 
-class DeepAnalyser(Thread):
+class DeepAnalyser(Process):
 
     def __init__(self, queue):
         super().__init__(name="Deep analysis process")

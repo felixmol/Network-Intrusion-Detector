@@ -27,7 +27,7 @@
 # SOFTWARE.
 #
 
-from queue import Queue
+from multiprocessing import Queue
 import socketserver
 import json
 import argparse
@@ -82,7 +82,7 @@ class CollectorStreamHandler(socketserver.StreamRequestHandler):
                 data = json.loads(file.read().strip(), encoding="utf-8")
             try:
                 for rec in data.keys():
-                    print("--- record %i from %s ---" % (data[rec]["flowId"], str(self.client_address)))
+                    print("--- record %i from %s ---" % (data[rec]["flowid"], str(self.client_address)))
                     for key in data[rec].keys():
                         print("\t" + key + " => " + str(data[rec][key]))
                     pre_process_data(data[rec], queue=flow_queue)
@@ -94,15 +94,15 @@ class CollectorStreamHandler(socketserver.StreamRequestHandler):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Network feature extractor for RaspberryPi')
-    parser.add_argument("-c", "--config", dest="config", required=False, type=str, help="Config file path\nThis must "
-                                                                                        "be an absolute path otherwise "
-                                                                                        "config cannot be loaded")
-    args = parser.parse_args(sys.argv)
+    # parser = argparse.ArgumentParser(description='Network feature extractor for RaspberryPi')
+    # parser.add_argument("-c", "--config", dest="config", required=False, type=str, help="Config file path\nThis must "
+     #                                                                                   "be an absolute path otherwise "
+     #                                                                                   "config cannot be loaded")
+    #args = parser.parse_args(sys.argv)
     conf = None
 
-    if args.config is not None and args.config != "":
-        conf = args.config
+    #if args.config is not None and args.config != "":
+    #    conf = args.config
 
     authorized_addresses = ["127.0.0.1"]
     deep_analysis_service_use = False
@@ -121,11 +121,8 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         # if deep_analyser is not None:
         #    deep_analyser.join(10)
-        while not flow_queue.empty():
-            flow_queue.get()
-            flow_queue.task_done()
         try:
-            flow_queue.join()
+            flow_queue.close()
         except Exception:
             pass
         print("\nServer closed")

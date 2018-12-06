@@ -75,20 +75,20 @@ def main(config_filename: str):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Network feature extractor for RaspberryPi')
-    parser.add_argument("-c", "--config", dest="config", required=False, type=str, help="Config file path\nThis must "
-                                                                                        "be an absolute path otherwise "
-                                                                                        "the config cannot be loaded")
-    parser.add_argument("-e", "--heuristics", dest="heuristics", required=False, type=str,
-                        help="JSON file of containing each feature id\nThis must be an absolute path otherwise the "
-                             "config cannot be loaded\ne.g. {\n\t'sourceMac': 1,\n\t'destinationMac': 2, \n\t...\n}")
-    args = parser.parse_args(sys.argv)
-    conf = None
+    # parser = argparse.ArgumentParser(description='Network feature extractor for RaspberryPi')
+    # parser.add_argument("-c", "--config", dest="config", required=False, type=str, help="Config file path\nThis must "
+    #                                                                                   "be an absolute path otherwise "
+    #                                                                                    "the config cannot be loaded")
+    # parser.add_argument("-e", "--heuristics", dest="heuristics", required=False, type=str,
+    #                    help="JSON file of containing each feature id\nThis must be an absolute path otherwise the "
+    #                         "config cannot be loaded\ne.g. {\n\t'sourceMac': 1,\n\t'destinationMac': 2, \n\t...\n}")
+    # args = parser.parse_args(sys.argv)
+    conf = "ids_config.conf"
     heuristics = None
 
-    if args.config is not None and args.config != "":
-        conf = args.config
-    if args.heuristics is not None and args.heuristics != "":
-        heuristics = json.load(open(args.config, mode='r'))
+    # if args.config is not None and args.config != "":
+    #    conf = args.config
+    # if args.heuristics is not None and args.heuristics != "":
+    #    heuristics = json.load(open(args.config, mode='r'))
 
-    main(conf)
+    main(config_filename=conf)
