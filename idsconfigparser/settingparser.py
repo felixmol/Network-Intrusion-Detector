@@ -31,45 +31,47 @@ import configparser
 import os
 
 
-HEURISTICS = {
-        "sourceMac": 1,
-        "destinationMac": 2,
-        "sourceIp": 3,
-        "destinationIp": 4,
-        "arpRequest": 5,
-        "arpReply": 6,
-        "flowStartTime": 7,
-        "flowEndTime": 8,
-        "flowDurationMilliseconds": 9,
-        "deltaTimeBetweenPackets": 10,
-        "flowRate": 11,
-        "minSize": 12,
-        "maxSize": 13,
-        "packetSizes": 14,
-        "deltaSizeBytes": 15,
-        "sumSizeBytes": 16,
-        "meanPacketSizeFromSource": 17,
-        "meanPacketSizeFromDestination": 18,
-        "sourceToDestinationSizeBytes": 19,
-        "destinationToSourceSizeBytes": 20,
-        "sourceToDestinationPacketNumber": 21,
-        "destinationToSourcePacketNumber": 22,
-        "totalPacket": 23,
-        "direction": 24,
-        "countSameDestinationAddress": 25,
-        "countSameSourceAddressDestinationPort": 26,
-        "countSameDestinationAddressSourcePort": 27,
-        "countSameSourceDestinationAddress": 28,
-        "minTTL": 29,
-        "maxTTL": 30,
-        "sourceToDestinationTTL": 31,
-        "destinationToSourceTTL": 32
-    }
+HEURISTICS = [
+    "flowid",
+    "sourcemac",
+    "destinationmac",
+    "sourceip",
+    "destinationip",
+    "arprequest",
+    "arpreply",
+    "flowstarttime",
+    "flowendtime",
+    "flowdurationmilliseconds",
+    "deltatimebetweenpackets",
+    "flowrate",
+    "minsize",
+    "maxsize",
+    "packetsizes",
+    "deltasizebytes",
+    "sumsizebytes",
+    "meanpacketsizefromsource",
+    "meanpacketsizefromdestination",
+    "sourcetodestinationsizebytes",
+    "destinationtosourcesizebytes",
+    "sourcetodestinationpacketnumber",
+    "destinationtosourcepacketnumber",
+    "totalpacket",
+    "direction",
+    "countsamedestinationaddress",
+    "countsamesourceaddressdestinationport",
+    "countsamedestinationaddresssourceport",
+    "countsamesourcedestinationaddress",
+    "minttl",
+    "maxttl",
+    "sourcetodestinationttl",
+    "destinationtosourcettl",
+    "closed"
+]
 
 
 class SettingParser(object):
 
-    def __init__(self, filename="ids_config.conf", heuristics: dict = HEURISTICS):
+    def __init__(self, filename="ids_config.conf", heuristics: list = HEURISTICS):
         super().__init__()
 
         self.error = "No error"
@@ -99,19 +101,18 @@ class SettingParser(object):
     def get_bool_value(self, section: str, key: str, default: bool):
         return self.__config_parser.getboolean(section=section, option=key, fallback=default)
 
-    def get_features(self, section: str = "FEATURES", key: str = "Features", default: list = list(0,)):
+    def get_features(self, section: str = "FEATURES", key: str = "Features", default: list = list(["all"])):
         features = []
         str_features = self.get_str_value(section, key, "ALL")
 
-        if str_features.lower() == "all":
+        if "all" in str_features.lower():
             return default
 
         for feature in str_features.replace(" ", "").lower().split(','):
             if feature == "all":
                 return default
-            try:
-                features.append(self.__heuristics[feature])
-            except KeyError:
-                pass
+
+            if feature in self.__heuristics:
+                features.append(feature)
 
         return features
