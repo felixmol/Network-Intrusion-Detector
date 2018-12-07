@@ -47,9 +47,9 @@ def main(config_filename: str):
     if output_file == "":
         output_file = None
 
-    capture_filters = setting_parser.get_str_value("EXTRACTOR", "CaptureFilters", "")
-    if capture_filters == "":
-        capture_filters = None
+    bpf_filter = setting_parser.get_str_value("EXTRACTOR", "BPFFilter", "")
+    if bpf_filter == "":
+        bpf_filter = None
 
     active_debug = setting_parser.get_bool_value("EXTRACTOR", "Debug", False)
 
@@ -58,7 +58,7 @@ def main(config_filename: str):
 
     start_time = datetime.now()
 
-    capture = pyshark.LiveCapture(interface=interface, output_file=output_file, capture_filter=capture_filters)
+    capture = pyshark.LiveCapture(interface=interface, output_file=output_file, bpf_filter=bpf_filter)
     capture.set_debug(active_debug)
 
     try:

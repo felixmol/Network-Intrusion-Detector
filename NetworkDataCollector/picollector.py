@@ -30,8 +30,8 @@
 import multiprocessing
 import socketserver
 import json
-import argparse
-import sys
+# import argparse
+# import sys
 # import deepanalyser
 
 
@@ -96,12 +96,12 @@ class CollectorStreamHandler(socketserver.StreamRequestHandler):
 if __name__ == '__main__':
     # parser = argparse.ArgumentParser(description='Network feature extractor for RaspberryPi')
     # parser.add_argument("-c", "--config", dest="config", required=False, type=str, help="Config file path\nThis must "
-     #                                                                                   "be an absolute path otherwise "
-     #                                                                                   "config cannot be loaded")
-    #args = parser.parse_args(sys.argv)
+    #                                                                                   "be an absolute path otherwise "
+    #                                                                                   "config cannot be loaded")
+    # args = parser.parse_args(sys.argv)
     conf = None
 
-    #if args.config is not None and args.config != "":
+    # if args.config is not None and args.config != "":
     #    conf = args.config
 
     authorized_addresses = ["127.0.0.1"]

@@ -29,6 +29,7 @@
 
 from threading import Timer
 from idsconfigparser import SettingParser
+from time import sleep
 import flowlib
 import multiprocessing
 
@@ -53,7 +54,7 @@ class FlowManager(object):
         self.__counters = flowlib.COUNTERS
 
         self.__flow_timers = {}
-        self.__flow_duration = 30
+        self.__flow_duration = config.get_int_value("EXTRACTOR", "FlowDuration", 180)
         self.__number_of_flow = 0
 
         self.__sending_service = flowlib.FlowSender(
@@ -210,23 +211,23 @@ class FlowManager(object):
                                                                                                0]].dstport)))
                         elif 'ICMP' in l4_protocol[0]:
                             flow = flowlib.ICMPFlow(flow_id=self.__next_id, source_mac=pkt.get_source_mac(),
-                                                   destination_mac=pkt.get_destination_mac(),
-                                                   source_ip=pkt.get_source_ip(),
-                                                   destination_ip=pkt.get_destination_ip(),
-                                                   transport_protocol=int(l4_protocol[1]),
-                                                   features_list=self.__features_list)
+                                                    destination_mac=pkt.get_destination_mac(),
+                                                    source_ip=pkt.get_source_ip(),
+                                                    destination_ip=pkt.get_destination_ip(),
+                                                    transport_protocol=int(l4_protocol[1]),
+                                                    features_list=self.__features_list)
                             aggregation = flow.aggregate(pkt,
                                                          counters=self.counter_calculation(packet.ip.src, packet.ip.dst,
                                                                                            0, 0))
                         else:
                             flow = flowlib.IPFlow(flow_id=self.__next_id, source_mac=pkt.get_source_mac(),
-                                                   destination_mac=pkt.get_destination_mac(),
-                                                   source_ip=pkt.get_source_ip(),
-                                                   destination_ip=pkt.get_destination_ip(),
-                                                   source_port=pkt.get_source_port(),
-                                                   destination_port=pkt.get_destination_port(),
-                                                   transport_protocol=int(l4_protocol[1]),
-                                                   features_list=self.__features_list)
+                                                  destination_mac=pkt.get_destination_mac(),
+                                                  source_ip=pkt.get_source_ip(),
+                                                  destination_ip=pkt.get_destination_ip(),
+                                                  source_port=pkt.get_source_port(),
+                                                  destination_port=pkt.get_destination_port(),
+                                                  transport_protocol=int(l4_protocol[1]),
+                                                  features_list=self.__features_list)
 
                             aggregation = flow.aggregate(pkt,
                                                          counters=self.counter_calculation(packet.ip.src, packet.ip.dst,
@@ -261,11 +262,13 @@ class FlowManager(object):
         for timer in self.__flow_timers.values():
             timer.cancel()
 
-        self.__sending_service.join(5)
+        self.__sending_service.join(1)
+        sleep(2)
         self.__send_list.close()
         print("[-] Sending service stopped")
 
-        self.__deletion_service.join(5)
+        self.__deletion_service.join(1)
+        sleep(2)
         self.__remove_list.close()
         self.__last_ids_removed.close()
         print("[-] Deletion service stopped")
