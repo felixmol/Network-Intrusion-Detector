@@ -27,7 +27,7 @@
 # SOFTWARE.
 #
 
-from multiprocessing import Queue
+import multiprocessing
 import socketserver
 import json
 import argparse
@@ -107,7 +107,7 @@ if __name__ == '__main__':
     authorized_addresses = ["127.0.0.1"]
     deep_analysis_service_use = False
 
-    flow_queue = Queue()
+    flow_queue = multiprocessing.Queue()
 
     deep_analyser = None
     # if deep_analysis_service_use:

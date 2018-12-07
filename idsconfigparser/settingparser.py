@@ -37,6 +37,7 @@ HEURISTICS = [
     "destinationmac",
     "sourceip",
     "destinationip",
+    "transportprotocol",
     "arprequest",
     "arpreply",
     "flowstarttime",

@@ -143,8 +143,8 @@ class Flow(__Flow):
                 self._delta_time_between_packets += [get_current_milli() - self._last_received_packet_time]
                 self._last_received_packet_time = get_current_milli()
 
-            self._add_packet(packet)
             self._size_actualisation(packet.get_length(), None)
+            self._add_packet(packet)
             self._flow_duration()
             return True
 
@@ -323,8 +323,8 @@ class ARPFlow(Flow):
                 self._delta_time_between_packets += [get_current_milli() - self._last_received_packet_time]
                 self._last_received_packet_time = get_current_milli()
 
-            self._add_packet(packet)
             self._size_actualisation(packet.get_length(), self.packet_direction(packet))
+            self._add_packet(packet)
             self._flow_duration()
 
             return True
@@ -384,7 +384,7 @@ class ICMPFlow(Flow):
                 "destinationmac": self._destination_mac,
                 "sourceip": self._source_ip,
                 "destinationip": self._destination_ip,
-                "transportProtocol": self._transport_protocol,
+                "transportprotocol": self._transport_protocol,
                 "flowstarttime": self._flow_start_time,
                 "flowendtime": self._flow_end_time,
                 "flowdurationmilliseconds": self._flow_duration_milliseconds,
@@ -471,7 +471,7 @@ class ICMPFlow(Flow):
             "destinationmac": self._destination_mac,
             "sourceip": self._source_ip,
             "destinationip": self._destination_ip,
-            "transportProtocol": self._transport_protocol,
+            "transportprotocol": self._transport_protocol,
             "flowstarttime": self._flow_start_time,
             "flowendtime": self._flow_end_time,
             "flowdurationmilliseconds": self._flow_duration_milliseconds,
@@ -525,9 +525,9 @@ class ICMPFlow(Flow):
                 self._delta_time_between_packets += [get_current_milli() - self._last_received_packet_time]
                 self._last_received_packet_time = get_current_milli()
 
-            self._add_packet(packet)
             self._size_actualisation(packet.get_length(), self.packet_direction(packet))
             self._ttl_actualisation(packet.get_ttl(), self.packet_direction(packet))
+            self._add_packet(packet)
             self._flow_duration()
 
             if counters is not None:
@@ -547,7 +547,7 @@ class ICMPFlow(Flow):
 class IPFlow(ICMPFlow):
 
     def __init__(self, flow_id: int, features_list: list = None, source_mac: str = None, destination_mac: str = None,
-                 source_ip: str = None, destination_ip: str = None, source_port: int  = None,
+                 source_ip: str = None, destination_ip: str = None, source_port: int = None,
                  destination_port: int = None, transport_protocol: int = None, app_protocol: int = None):
         super().__init__(flow_id=flow_id, features_list=features_list, source_mac=source_mac,
                          destination_mac=destination_mac, source_ip=source_ip, destination_ip=destination_ip,
@@ -567,9 +567,9 @@ class IPFlow(ICMPFlow):
                 "destinationmac": self._destination_mac,
                 "sourceip": self._source_ip,
                 "destinationip": self._destination_ip,
-                "sourcePort": self._source_port,
-                "destinationPort": self._destination_port,
-                "transportProtocol": self._transport_protocol,
+                "sourceport": self._source_port,
+                "destinationport": self._destination_port,
+                "transportprotocol": self._transport_protocol,
                 "flowstarttime": self._flow_start_time,
                 "flowendtime": self._flow_end_time,
                 "flowdurationmilliseconds": self._flow_duration_milliseconds,
@@ -617,9 +617,9 @@ class IPFlow(ICMPFlow):
             "destinationmac": self._destination_mac,
             "sourceip": self._source_ip,
             "destinationip": self._destination_ip,
-            "sourcePort": self._source_port,
-            "destinationPort": self._destination_port,
-            "transportProtocol": self._transport_protocol,
+            "sourceport": self._source_port,
+            "destinationport": self._destination_port,
+            "transportprotocol": self._transport_protocol,
             "flowstarttime": self._flow_start_time,
             "flowendtime": self._flow_end_time,
             "flowdurationmilliseconds": self._flow_duration_milliseconds,
@@ -668,8 +668,9 @@ class TCPFlow(IPFlow):
     def __init__(self, flow_id: int, features_list: list = None, source_mac: str = None, destination_mac: str = None,
                  source_ip: str = None, destination_ip: str = None, source_port: int = None,
                  destination_port: int = None, transport_protocol: int = None, app_protocol: int = None):
-        super().__init__(flow_id=flow_id, features_list=features_list, source_mac=source_mac, destination_mac=destination_mac, source_ip=source_ip,
-                         destination_ip=destination_ip, source_port=source_port, destination_port=destination_port,
+        super().__init__(flow_id=flow_id, features_list=features_list, source_mac=source_mac,
+                         destination_mac=destination_mac, source_ip=source_ip, destination_ip=destination_ip,
+                         source_port=source_port, destination_port=destination_port,
                          transport_protocol=transport_protocol, app_protocol=app_protocol)
 
         self._flags = CONNECTION_FLAGS
