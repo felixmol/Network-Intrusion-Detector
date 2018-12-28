@@ -63,8 +63,7 @@ def main(config_filename: str):
 
     try:
         capture.apply_on_packets(flow_manager.packet_analysis)
-    except (Exception, KeyboardInterrupt) as e:
-        print(e)
+    except (Exception, KeyboardInterrupt):
         pass
     finally:
         end_time = datetime.now()

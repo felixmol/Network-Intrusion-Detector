@@ -29,7 +29,6 @@
 
 from threading import Timer
 from idsconfigparser import SettingParser
-from time import sleep
 import flowlib
 import multiprocessing
 
@@ -40,21 +39,20 @@ class FlowManager(object):
         super().__init__()
 
         self.__setting_parser = config
-        self.__features_list = config.get_features()
 
         self.__flow_list = dict()
         self.__send_list = multiprocessing.Queue()
         self.__remove_list = multiprocessing.Queue()
         self.__last_ids_removed = multiprocessing.Queue()
 
-        self.__last_id_assigned = -1
+        self.__last_id_assigned = 0
         self.__next_id = 0
         self.__ids_removed_length = 0
 
         self.__counters = flowlib.COUNTERS
 
         self.__flow_timers = {}
-        self.__flow_duration = config.get_int_value("EXTRACTOR", "FlowDuration", 180)
+        self.__flow_duration = self.__setting_parser.get_int_value("EXTRACTOR", "FlowDuration", 180)
         self.__number_of_flow = 0
 
         self.__sending_service = flowlib.FlowSender(
@@ -73,10 +71,8 @@ class FlowManager(object):
         self.__last_id_assigned += 1
 
         if not self.__last_ids_removed.empty():
-            __next_id = self.__last_ids_removed.get()
+            __next_id = self.__last_ids_removed.get(timeout=2)
             self.__last_id_assigned -= 1
-
-        self.__ids_removed_length = self.__last_ids_removed.qsize()
 
         return __next_id
 
@@ -92,26 +88,26 @@ class FlowManager(object):
             self.put_in_send_list(self.__flow_list[flow_id])
             self.put_in_remove_list(self.__flow_list[flow_id])
             del self.__flow_list[flow_id]
-        except KeyError:
-            pass
+        except KeyError as e:
+            print(str(e) + " " + str(flow_id))
 
         if not by_timer:
             self.__flow_timers[flow_id].cancel()
-            del self.__flow_timers[flow_id]
 
     def add_flow(self, flow):
         self.__flow_list[flow.get_flow_id()] = flow
 
     def put_in_send_list(self, flow):
+        # print(flow.to_dict_format())
         try:
             if self.__send_list.empty():
                 self.__send_list.put({
                     flow.get_flow_id(): flow.to_dict_format()
-                })
+                }, timeout=2)
             else:
-                flows = self.__send_list.get()
+                flows = self.__send_list.get(timeout=2)
                 flows[flow.get_flow_id()] = flow.to_dict_format()
-                self.__send_list.put(flows)
+                self.__send_list.put(flows, timeout=2)
         except OSError:
             pass
 
@@ -120,12 +116,12 @@ class FlowManager(object):
             if self.__remove_list.empty():
                 self.__remove_list.put({
                     flow.get_flow_id(): flow.to_dict_format()
-                })
+                }, timeout=2)
             else:
-                flows = self.__remove_list.get()
+                flows = self.__remove_list.get(timeout=2)
 
                 flows[flow.get_flow_id()] = flow.to_dict_format()
-                self.__remove_list.put(flows)
+                self.__remove_list.put(flows, timeout=2)
         except OSError:
             pass
 
@@ -189,19 +185,19 @@ class FlowManager(object):
                 if aggregation is not True:
                     if isinstance(pkt, flowlib.ARPPacket):
                         flow = flowlib.ARPFlow(flow_id=self.__next_id, source_mac=pkt.get_source_mac(),
-                                               source_ip=pkt.get_source_ip(), destination_ip=pkt.get_destination_ip(),
-                                               features_list=self.__features_list)
+                                               source_ip=pkt.get_source_ip(),
+                                               destination_ip=pkt.get_destination_ip())
                         aggregation = flow.aggregate(pkt)
                     else:
                         if 'TCP' in l4_protocol[0]:
-                            flow = flowlib.TCPFlow(flow_id=self.__next_id, source_mac=pkt.get_source_mac(),
+                            flow = flowlib.TCPFlow(flow_id=self.__next_id,
+                                                   source_mac=pkt.get_source_mac(),
                                                    destination_mac=pkt.get_destination_mac(),
                                                    source_ip=pkt.get_source_ip(),
                                                    destination_ip=pkt.get_destination_ip(),
                                                    source_port=pkt.get_source_port(),
                                                    destination_port=pkt.get_destination_port(),
-                                                   transport_protocol=int(l4_protocol[1]),
-                                                   features_list=self.__features_list)
+                                                   transport_protocol=int(l4_protocol[1]))
                             aggregation = flow.aggregate(pkt,
                                                          counters=self.counter_calculation(packet.ip.src, packet.ip.dst,
                                                                                            int(packet[
@@ -210,24 +206,24 @@ class FlowManager(object):
                                                                                            int(packet[l4_protocol[
                                                                                                0]].dstport)))
                         elif 'ICMP' in l4_protocol[0]:
-                            flow = flowlib.ICMPFlow(flow_id=self.__next_id, source_mac=pkt.get_source_mac(),
+                            flow = flowlib.ICMPFlow(flow_id=self.__next_id,
+                                                    source_mac=pkt.get_source_mac(),
                                                     destination_mac=pkt.get_destination_mac(),
                                                     source_ip=pkt.get_source_ip(),
                                                     destination_ip=pkt.get_destination_ip(),
-                                                    transport_protocol=int(l4_protocol[1]),
-                                                    features_list=self.__features_list)
+                                                    transport_protocol=int(l4_protocol[1]))
                             aggregation = flow.aggregate(pkt,
                                                          counters=self.counter_calculation(packet.ip.src, packet.ip.dst,
                                                                                            0, 0))
                         else:
-                            flow = flowlib.IPFlow(flow_id=self.__next_id, source_mac=pkt.get_source_mac(),
+                            flow = flowlib.IPFlow(flow_id=self.__next_id,
+                                                  source_mac=pkt.get_source_mac(),
                                                   destination_mac=pkt.get_destination_mac(),
                                                   source_ip=pkt.get_source_ip(),
                                                   destination_ip=pkt.get_destination_ip(),
                                                   source_port=pkt.get_source_port(),
                                                   destination_port=pkt.get_destination_port(),
-                                                  transport_protocol=int(l4_protocol[1]),
-                                                  features_list=self.__features_list)
+                                                  transport_protocol=int(l4_protocol[1]))
 
                             aggregation = flow.aggregate(pkt,
                                                          counters=self.counter_calculation(packet.ip.src, packet.ip.dst,
@@ -259,18 +255,23 @@ class FlowManager(object):
 
     def stop_service(self):
         print("Stopping services...")
-        for timer in self.__flow_timers.values():
-            timer.cancel()
+        for timer_key in self.__flow_timers.keys():
+            if self.__flow_timers[timer_key].is_alive():
+                self.__flow_timers[timer_key].cancel()
+                self.__flow_timers[timer_key].join(1)
 
-        self.__sending_service.join(1)
-        sleep(2)
+        self.__sending_service.terminate()
+        self.__sending_service.join(5)
         self.__send_list.close()
+        self.__send_list.join_thread()
         print("[-] Sending service stopped")
 
-        self.__deletion_service.join(1)
-        sleep(2)
+        self.__deletion_service.terminate()
+        self.__deletion_service.join(5)
         self.__remove_list.close()
+        self.__remove_list.join_thread()
         self.__last_ids_removed.close()
+        self.__last_ids_removed.join_thread()
         print("[-] Deletion service stopped")
 
         print("\nNumber of flow recorded :\n\t" + str(self.__number_of_flow))

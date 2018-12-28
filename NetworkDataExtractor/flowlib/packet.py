@@ -95,11 +95,11 @@ class ARPPacket(Packet):
             self.__hash = self.__hash()
 
             if "request" in packet.arp.opcode.showname_value.split(" ")[0]:
-                self.__reply = True
-                self.__request = False
-            elif "reply" in packet.arp.opcode.showname_value.split(" ")[0]:
-                self.__request = True
                 self.__reply = False
+                self.__request = True
+            elif "reply" in packet.arp.opcode.showname_value.split(" ")[0]:
+                self.__request = False
+                self.__reply = True
         except Exception as e:
             raise PacketInitException(str(e))
 

@@ -31,52 +31,13 @@ import configparser
 import os
 
 
-HEURISTICS = [
-    "flowid",
-    "sourcemac",
-    "destinationmac",
-    "sourceip",
-    "destinationip",
-    "transportprotocol",
-    "arprequest",
-    "arpreply",
-    "flowstarttime",
-    "flowendtime",
-    "flowdurationmilliseconds",
-    "deltatimebetweenpackets",
-    "flowrate",
-    "minsize",
-    "maxsize",
-    "packetsizes",
-    "deltasizebytes",
-    "sumsizebytes",
-    "meanpacketsizefromsource",
-    "meanpacketsizefromdestination",
-    "sourcetodestinationsizebytes",
-    "destinationtosourcesizebytes",
-    "sourcetodestinationpacketnumber",
-    "destinationtosourcepacketnumber",
-    "totalpacket",
-    "direction",
-    "countsamedestinationaddress",
-    "countsamesourceaddressdestinationport",
-    "countsamedestinationaddresssourceport",
-    "countsamesourcedestinationaddress",
-    "minttl",
-    "maxttl",
-    "sourcetodestinationttl",
-    "destinationtosourcettl",
-    "closed"
-]
-
-
 class SettingParser(object):
 
-    def __init__(self, filename="ids_config.conf", heuristics: list = HEURISTICS):
+    def __init__(self, filename="ids_config.conf", allow_no_value=False):
         super().__init__()
 
-        self.error = "No error"
-        self.__config_parser = configparser.ConfigParser()
+        self.error = "no error"
+        self.__config_parser = configparser.ConfigParser(allow_no_value=allow_no_value)
         self.__filename = filename
 
         if os.path.exists(self.__filename) and os.path.isfile(self.__filename):
@@ -88,32 +49,30 @@ class SettingParser(object):
             self.error = "Impossible to find " + self.__filename + ".\nCheck that is an absolute path."
             self.__filename = "ids_config_parser.conf"
 
-        self.__heuristics = heuristics
-
-    def get_int_value(self, section: str, key: str, default: int):
+    def get_int_value(self, section: str, key: str, default: int) -> int:
         return self.__config_parser.getint(section=section, option=key, fallback=default)
 
-    def get_float_value(self, section: str, key: str, default: float):
+    def get_float_value(self, section: str, key: str, default: float) -> float:
         return self.__config_parser.getfloat(section=section, option=key, fallback=default)
 
-    def get_str_value(self, section: str, key: str, default: str):
+    def get_str_value(self, section: str, key: str, default: str) -> str:
         return self.__config_parser.get(section=section, option=key, fallback=default)
 
-    def get_bool_value(self, section: str, key: str, default: bool):
+    def get_bool_value(self, section: str, key: str, default: bool) -> bool:
         return self.__config_parser.getboolean(section=section, option=key, fallback=default)
 
-    def get_features(self, section: str = "FEATURES", key: str = "Features", default: list = list(["all"])):
-        features = []
-        str_features = self.get_str_value(section, key, "ALL")
+    def get_list_value(self, section: str, key: str, separator: str = ',', default: list = list()) -> list:
+        str_value = self.get_str_value(section=section, key=key, default='')
 
-        if "all" in str_features.lower():
+        if str_value is '' or "all" in str_value:
             return default
 
-        for feature in str_features.replace(" ", "").lower().split(','):
-            if feature == "all":
-                return default
+        return str_value.lower().replace(' ', '').split(sep=separator)
 
-            if feature in self.__heuristics:
-                features.append(feature)
+    def get_all_value_from_section(self, section: str, default: dict = None) -> dict:
+        default_value = default if default is not None else {}
 
-        return features
+        if section not in self.__config_parser.sections():
+            return default_value
+
+        return self.__config_parser[section]
