@@ -47,12 +47,17 @@ class FlowAnalyser(multiprocessing.Process):
         super().__init__(name="Flow analysis process")
 
         config_parser = SettingParser(filename=config_path_file, allow_no_value=True)
-        model_path_file = config_parser.get_str_value("GENERAL", "ModelPathFile", "")
-        weights_path_file = config_parser.get_str_value("GENERAL", "WeightsPathFile", "")
-        training_csv_dataset = config_parser.get_str_value("GENERAL", "TrainingDatasetPathFile", "")
+        model_path_file = config_parser.get_str_value("GENERAL", "ModelFilePath", "")
+        weights_path_file = config_parser.get_str_value("GENERAL", "WeightsFilePath", "")
+        training_csv_dataset = config_parser.get_str_value("GENERAL", "TrainingDatasetFilePath", "")
+        prediction_path_file = config_parser.get_str_value("GENERAL", "PredictionFilePath", "")
 
         if model_path_file == "" or weights_path_file == "" or training_csv_dataset == "":
-            raise DeepAnalyserInitError("Invalid configuration")
+            raise FlowAnalyserInitError("Invalid configuration")
+
+        self.__prediction_file = prediction_path_file
+        if prediction_path_file == "" or prediction_path_file is None:
+            self.__prediction_file = "prediction_saved.dat"
 
         self.__prediction_headers = []
         for element in config_parser.get_all_value_from_section(section="PREDICTION-HEADERS").keys():
@@ -75,11 +80,11 @@ class FlowAnalyser(multiprocessing.Process):
                 # load weights into new model
                 self.__model.load_weights(weights_path_file)
             else:
-                raise DeepAnalyserInitError("Model loading error: model or weights files do not exist or are not "
+                raise FlowAnalyserInitError("Model loading error: model or weights files do not exist or are not "
                                             "Keras-readable files\nThe model file must be a Keras-readable JSON file "
                                             "and the weights file must be a Keras-readable H5 file")
         except Exception as e:
-            raise DeepAnalyserInitError("Model loading error: " + str(e))
+            raise FlowAnalyserInitError("Model loading error: " + str(e))
 
         self.__scaler = MinMaxScaler()
 
@@ -94,14 +99,14 @@ class FlowAnalyser(multiprocessing.Process):
                 try:
                     x_train = x_train.astype(float)
                 except (ValueError, numpy.ComplexWarning) as e:
-                    raise DeepAnalyserInitError("Error during training dataset scaling: " + str(e))
+                    raise FlowAnalyserInitError("Error during training dataset scaling: " + str(e))
 
                 self.__scaler.fit(x_train)
             else:
-                raise DeepAnalyserInitError("Training data loading error: training dataset does not exist or is not a "
+                raise FlowAnalyserInitError("Training data loading error: training dataset does not exist or is not a "
                                             "CSV file")
         except Exception as e:
-            raise DeepAnalyserInitError("Training data loading error: " + str(e))
+            raise FlowAnalyserInitError("Training data loading error: " + str(e))
 
     def run(self):
         while 1:
@@ -113,7 +118,26 @@ class FlowAnalyser(multiprocessing.Process):
 
                     for key in flow.keys():
                         try:
-                            listed_flow[self.__features.index(key.lower())] = flow[key.lower()]
+                            if key.lower() in "packetsizes" or key.lower() in "deltatimebetweenpackets":
+                                for feature in self.__features:
+                                    if feature.lower() in "packetsizes_" or "deltatimebetweenpackets_":
+                                        try:
+                                            packet_index = feature.split("_")[1]
+                                        except IndexError:
+                                            pass
+
+                                        if packet_index <= 0:
+                                            pass
+
+                                        value = 0
+                                        try:
+                                            value = flow[key.lower()][packet_index - 1]
+                                        except IndexError:
+                                            value = 0
+
+                                        listed_flow[self.__features.index(feature.lower())] = value
+                            else:
+                                listed_flow[self.__features.index(key.lower())] = flow[key.lower()]
                         except ValueError:
                             pass
 
@@ -128,7 +152,11 @@ class FlowAnalyser(multiprocessing.Process):
                     data_line = data_line.reshape([1, len(self.__features), 1, 1])
 
                     print("--- Prediction ---")
-                    print(self.__model.predict(data_line, headers=self.__prediction_headers))
+                    prediction = self.__model.predict(data_line, headers=self.__prediction_headers)
+                    print(prediction)
                     print("--- \t ---")
+
+                    with open(self.__prediction_file, 'a') as prediction_file:
+                        numpy.savetxt(prediction_file, prediction, delimiter=",")
             except KeyboardInterrupt:
                 break

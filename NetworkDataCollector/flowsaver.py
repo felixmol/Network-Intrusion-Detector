@@ -79,27 +79,27 @@ class FlowSaver(multiprocessing.Process):
 
         try:
             if file_size_limit.find("K") != -1:
-                self.__file_size_limit = int(file_size_limit.split("K")[0]) * (10 ** 3) if int(
-                    file_size_limit.split("K")[0]) > 1 else (10 ** 3)
+                self.__file_size_limit = int(file_size_limit.split("K")[0].replace(' ', '')) * (10 ** 3) if int(
+                    file_size_limit.split("K")[0].replace(' ', '')) > 1 else (10 ** 3)
             elif file_size_limit.find("k") != -1:
-                self.__file_size_limit = int(file_size_limit.split("k")[0]) * (10 ** 3) if int(
-                    file_size_limit.split("k")[0]) > 1 else (10 ** 3)
+                self.__file_size_limit = int(file_size_limit.split("k")[0].replace(' ', '')) * (10 ** 3) if int(
+                    file_size_limit.split("k")[0].replace(' ', '')) > 1 else (10 ** 3)
             elif file_size_limit.find("M") != -1:
-                self.__file_size_limit = int(file_size_limit.split("M")[0]) * (10 ** 6) if int(
-                    file_size_limit.split("M")[0]) > 1 else (10 ** 6)
+                self.__file_size_limit = int(file_size_limit.split("M")[0].replace(' ', '')) * (10 ** 6) if int(
+                    file_size_limit.split("M")[0].replace(' ', '')) > 1 else (10 ** 6)
             elif file_size_limit.find("m") != -1:
-                self.__file_size_limit = int(file_size_limit.split("m")[0]) * (10 ** 6) if int(
-                    file_size_limit.split("m")[0]) > 1 else (10 ** 6)
+                self.__file_size_limit = int(file_size_limit.split("m")[0].replace(' ', '')) * (10 ** 6) if int(
+                    file_size_limit.split("m")[0].replace(' ', '')) > 1 else (10 ** 6)
             elif file_size_limit.find("G") != -1:
-                self.__file_size_limit = int(file_size_limit.split("G")[0]) * (10 ** 9) if int(
-                    file_size_limit.split("G")[0]) > 1 else (10 ** 9)
+                self.__file_size_limit = int(file_size_limit.split("G")[0].replace(' ', '')) * (10 ** 9) if int(
+                    file_size_limit.split("G")[0].replace(' ', '')) > 1 else (10 ** 9)
             elif file_size_limit.find("g") != -1:
-                self.__file_size_limit = int(file_size_limit.split("g")[0]) * (10 ** 9) if int(
-                    file_size_limit.split("g")[0]) > 1 else (10 ** 9)
+                self.__file_size_limit = int(file_size_limit.split("g")[0].replace(' ', '')) * (10 ** 9) if int(
+                    file_size_limit.split("g")[0].replace(' ', '')) > 1 else (10 ** 9)
             else:
-                self.__file_size_limit = 100 * (10 ** 6)
+                self.__file_size_limit = 10 * (10 ** 6)
         except TypeError:
-            self.__file_size_limit = 100 * (10 ** 6)
+            self.__file_size_limit = 10 * (10 ** 6)
 
         if not os.path.isdir(directory_path):
             self.__directory_path = ''

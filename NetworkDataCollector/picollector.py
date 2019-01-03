@@ -28,8 +28,8 @@
 #
 
 from idsconfigparser import SettingParser
+from flowanalyser import FlowAnalyser, FlowAnalyserInitError
 from flowsaver import FlowSaver
-# from flowanalyser import FlowAnalyser, FlowAnalyserInitError
 import multiprocessing
 import socketserver
 import json
@@ -54,8 +54,8 @@ def check_ipv4_address(address) -> bool:
             return True
         else:
             return False
-    except Exception as e:
-        raise InvalidIPv4("Invalid IPv4 address: " + str(e))
+    except Exception as ex:
+        raise InvalidIPv4("Invalid IPv4 address: " + str(ex))
 
 
 def is_authorized_address(address):
@@ -69,8 +69,8 @@ def pre_process_data(data: dict):
     try:
         flow_queue.put(data, timeout=2)
         saving_queue.put(data, timeout=2)
-    except Exception as e:
-        print(str(e))
+    except Exception as exc:
+        print(str(exc))
 
 
 class CollectorStreamHandler(socketserver.StreamRequestHandler):
@@ -94,8 +94,8 @@ class CollectorStreamHandler(socketserver.StreamRequestHandler):
                             print("\t" + key + " => " + str(data[rec][key]))
                     # print(_data)
                     pre_process_data(_data)
-            except Exception as e:
-                print(str(e))
+            except Exception as exp:
+                print(str(exp))
             finally:
                 print("[-] Connection closed by " + str(self.client_address) + "\n")
 
@@ -145,7 +145,7 @@ if __name__ == '__main__':
                 flow_saving_service = False
 
             else:
-                flow_saver_limit_size = setting_parser.get_str_value("COLLECTOR", "FileSizeLimit", "100M")
+                flow_saver_limit_size = setting_parser.get_str_value("COLLECTOR", "FileSizeLimit", "10M")
                 flow_saver_file_type = setting_parser.get_str_value("COLLECTOR", "FileType", "csv")
 
                 flow_saver = FlowSaver(directory_path=flow_saver_directory_path,
@@ -156,15 +156,15 @@ if __name__ == '__main__':
                 flow_saver.start()
                 print("[+] Flow saving service started")
 
-    deep_analysis_service_use = setting_parser.get_bool_value("COLLECTOR", "DeepAnalysisService", False)
+    deep_analysis_service_use = setting_parser.get_bool_value("COLLECTOR", "FlowAnalysisService", False)
 
     if deep_analysis_service_use:
-        deep_analysis_config_file = setting_parser.get_str_value("COLLECTOR", "DeepAnalyserConfigPath", "")
+        deep_analysis_config_file = setting_parser.get_str_value("COLLECTOR", "FlowAnalyserConfigPath", "")
 
         if deep_analysis_config_file != "":
             try:
-                # deep_analyser = FlowAnalyser(config_path_file=deep_analysis_config_file, queue=flow_queue)
-                # deep_analyser.start()
+                deep_analyser = FlowAnalyser(config_path_file=deep_analysis_config_file, queue=flow_queue)
+                deep_analyser.start()
                 deep_analyser = None
                 print("[+] Flow analysis service started")
             except Exception as e:  # FlowAnalyserInitError as e:
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     try:
         print("Server listens on " + str(sock_server.server_address[0]) + ":" + str(sock_server.server_address[1]))
         sock_server.serve_forever()
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, Exception):
         sock_server.shutdown()
         sock_server.server_close()
 
