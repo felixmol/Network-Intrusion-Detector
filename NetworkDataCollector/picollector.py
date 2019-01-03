@@ -29,7 +29,7 @@
 
 from idsconfigparser import SettingParser
 from flowsaver import FlowSaver
-from flowanalyser import FlowAnalyser, FlowAnalyserInitError
+# from flowanalyser import FlowAnalyser, FlowAnalyserInitError
 import multiprocessing
 import socketserver
 import json
@@ -92,7 +92,8 @@ class CollectorStreamHandler(socketserver.StreamRequestHandler):
                         if features_list == [] or key.lower() in features_list:
                             _data[key.lower()] = data[rec][key]
                             print("\t" + key + " => " + str(data[rec][key]))
-                    pre_process_data(data=_data)
+                    # print(_data)
+                    pre_process_data(_data)
             except Exception as e:
                 print(str(e))
             finally:
@@ -129,7 +130,7 @@ if __name__ == '__main__':
     flow_saving_service = setting_parser.get_bool_value("COLLECTOR", "FlowSavingService", True)
     flow_saver_path = ""
     flow_saver_filename = ""
-    flow_saver_limit_size = "100M"
+    flow_saver_limit_size = "10M"
     flow_saver_file_type = "csv"
 
     if flow_saving_service:
@@ -166,7 +167,7 @@ if __name__ == '__main__':
                 # deep_analyser.start()
                 deep_analyser = None
                 print("[+] Flow analysis service started")
-            except FlowAnalyserInitError as e:
+            except Exception as e:  # FlowAnalyserInitError as e:
                 print(str(e))
                 deep_analysis_service_use = False
 
@@ -176,21 +177,23 @@ if __name__ == '__main__':
         print("Server listens on " + str(sock_server.server_address[0]) + ":" + str(sock_server.server_address[1]))
         sock_server.serve_forever()
     except KeyboardInterrupt:
+        sock_server.shutdown()
+        sock_server.server_close()
+
         if deep_analysis_service_use and deep_analyser is not None:
             deep_analyser.terminate()
             deep_analyser.join(5)
             print("[-] Flow analysis service stopped")
 
         if flow_saving_service and flow_saver is not None:
-            flow_saver.terminate()
-            flow_saver.join(5)
+            # flow_saver.terminate()
+            flow_saver.join()
             print("[-] Flow saving service stopped")
 
-        try:
-            flow_queue.close()
-            flow_queue.join_thread()
-            saving_queue.close()
-            saving_queue.join_thread()
-        except Exception:
-            pass
+        flow_queue.close()
+        flow_queue.join_thread()
+
+        saving_queue.close()
+        saving_queue.join_thread()
+
         print("\nServer closed")

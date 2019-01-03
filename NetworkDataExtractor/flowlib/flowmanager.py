@@ -242,10 +242,10 @@ class FlowManager(object):
                         self.__next_id = self.__next_flow_id()
 
             except Exception as ec:
-                print("Flow error : " + str(ec))
+                print("Flow error: " + str(ec))
 
         except Exception as exc:
-            print("Error : " + str(exc))
+            print("Packet error: " + str(exc))
 
     def start_service(self):
         self.__sending_service.start()
@@ -262,14 +262,17 @@ class FlowManager(object):
 
         self.__sending_service.terminate()
         self.__sending_service.join(5)
+
         self.__send_list.close()
         self.__send_list.join_thread()
         print("[-] Sending service stopped")
 
         self.__deletion_service.terminate()
         self.__deletion_service.join(5)
+
         self.__remove_list.close()
         self.__remove_list.join_thread()
+
         self.__last_ids_removed.close()
         self.__last_ids_removed.join_thread()
         print("[-] Deletion service stopped")

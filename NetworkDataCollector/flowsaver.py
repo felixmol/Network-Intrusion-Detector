@@ -27,6 +27,7 @@
 # SOFTWARE.
 #
 
+from multiprocessing.queues import Empty
 import multiprocessing
 import json
 import time
@@ -39,6 +40,10 @@ def get_current_milli():
 
 
 def path_calculation(directory_path: str, filename: str, file_index: int):
+    if directory_path == "." or directory_path == "" or directory_path == "./" or directory_path == "/" or \
+                    directory_path == ".\\" or directory_path == "\\":
+        directory_path = os.path.curdir
+
     if directory_path[-1] == "\\" or directory_path[-1] == "/":
         return directory_path + filename + "_" + str(file_index)
     else:
@@ -51,10 +56,10 @@ def path_calculation(directory_path: str, filename: str, file_index: int):
 class FlowSaver(multiprocessing.Process):
 
     def __init__(self, directory_path: str = None, filename: str = None, file_size_limit: str = "100M",
-                 queue: multiprocessing.Queue = multiprocessing.Queue(), file_type: str = "both"):
+                 queue: multiprocessing.Queue = None, file_type: str = "both"):
         super().__init__(name="Flow saving process")
 
-        if file_type.lower() == "both":
+        if "both" in file_type.lower():
             self.__write_csv = True
             self.__write_json = True
         elif file_type.lower() == "csv":
@@ -74,17 +79,23 @@ class FlowSaver(multiprocessing.Process):
 
         try:
             if file_size_limit.find("K") != -1:
-                self.__file_size_limit = int(file_size_limit.split("K")[0]) * (10 ** 3)
+                self.__file_size_limit = int(file_size_limit.split("K")[0]) * (10 ** 3) if int(
+                    file_size_limit.split("K")[0]) > 1 else (10 ** 3)
             elif file_size_limit.find("k") != -1:
-                self.__file_size_limit = int(file_size_limit.split("k")[0]) * (10 ** 3)
+                self.__file_size_limit = int(file_size_limit.split("k")[0]) * (10 ** 3) if int(
+                    file_size_limit.split("k")[0]) > 1 else (10 ** 3)
             elif file_size_limit.find("M") != -1:
-                self.__file_size_limit = int(file_size_limit.split("M")[0]) * (10 ** 6)
+                self.__file_size_limit = int(file_size_limit.split("M")[0]) * (10 ** 6) if int(
+                    file_size_limit.split("M")[0]) > 1 else (10 ** 6)
             elif file_size_limit.find("m") != -1:
-                self.__file_size_limit = int(file_size_limit.split("m")[0]) * (10 ** 6)
+                self.__file_size_limit = int(file_size_limit.split("m")[0]) * (10 ** 6) if int(
+                    file_size_limit.split("m")[0]) > 1 else (10 ** 6)
             elif file_size_limit.find("G") != -1:
-                self.__file_size_limit = int(file_size_limit.split("G")[0]) * (10 ** 9)
+                self.__file_size_limit = int(file_size_limit.split("G")[0]) * (10 ** 9) if int(
+                    file_size_limit.split("G")[0]) > 1 else (10 ** 9)
             elif file_size_limit.find("g") != -1:
-                self.__file_size_limit = int(file_size_limit.split("g")[0]) * (10 ** 9)
+                self.__file_size_limit = int(file_size_limit.split("g")[0]) * (10 ** 9) if int(
+                    file_size_limit.split("g")[0]) > 1 else (10 ** 9)
             else:
                 self.__file_size_limit = 100 * (10 ** 6)
         except TypeError:
@@ -100,11 +111,11 @@ class FlowSaver(multiprocessing.Process):
         else:
             self.__filename = filename
 
-        self.__path = path_calculation(self.__directory_path, self.__filename, self.__file_index)
+        self.__path = path_calculation(self.__directory_path, self.__filename + "_csv", self.__file_index)
 
-        with open(self.__path, 'a') as csv_file:
+        with open(self.__path, 'w+') as csv_file:
             fieldnames = csv_file.readline()
-            if fieldnames == "":
+            if fieldnames == "" or fieldnames is None:
                 self.__fieldnames = ["id"]
             else:
                 self.__fieldnames = fieldnames.lower().replace(' ', '').split(',')
@@ -119,13 +130,13 @@ class FlowSaver(multiprocessing.Process):
                 if data is None:
                     pass
 
-                if bytes(str(data), encoding="utf-8").__len__() + bytes(str(
-                        self.__json_writer), encoding="utf-8").__len__() > self.__file_size_limit \
-                        or bytes(data, encoding="utf-8").__len__() + bytes(str(self.__csv_writer), encoding="utf-8"
-                                                                           ).__len__():
+                if str(data).encode(encoding="utf-8").__len__() + \
+                        str(self.__json_writer).encode(encoding="utf-8").__len__() > self.__file_size_limit \
+                        or str(data).encode(encoding="utf-8").__len__() + str(self.__csv_writer).encode(
+                            encoding="utf-8").__len__() > self.__file_size_limit:
 
                     if self.__write_csv:
-                        self.__path = path_calculation(self.__directory_path, self.__filename + "csv",
+                        self.__path = path_calculation(self.__directory_path, self.__filename + "_csv",
                                                        self.__file_index)
                         with open(self.__path, 'w') as csv_file:
                             for row in self.__csv_writer:
@@ -134,7 +145,7 @@ class FlowSaver(multiprocessing.Process):
                         self.__csv_writer = [",".join(self.__fieldnames)]
 
                     if self.__write_json:
-                        self.__path = path_calculation(self.__directory_path, self.__filename + "json",
+                        self.__path = path_calculation(self.__directory_path, self.__filename + "_json",
                                                        self.__file_index)
                         with open(self.__path, 'w') as json_file:
                             json.dump(self.__json_writer, json_file, ensure_ascii=True)
@@ -148,7 +159,7 @@ class FlowSaver(multiprocessing.Process):
                 if self.__write_csv:
                     write = []
                     write += ["0"] * len(self.__fieldnames)
-                    write[0] = [str(self.__record_id)]
+                    write[0] = str(self.__record_id)
 
                     for key in data.keys():
                         if key.lower() in self.__fieldnames:
@@ -156,9 +167,9 @@ class FlowSaver(multiprocessing.Process):
                         else:
                             if "flowid" not in key.lower():
                                 self.__fieldnames += [str(key.lower())]
-                                self.__csv_writer[0] = ",".join(self.__fieldnames)
                                 write += [str(data[key])]
 
+                    self.__csv_writer[0] = ",".join(self.__fieldnames)
                     self.__csv_writer += [",".join(write)]
 
                 if self.__write_json:
@@ -172,23 +183,24 @@ class FlowSaver(multiprocessing.Process):
                     self.__json_writer[str(self.__record_id)] = write
 
                 self.__record_id += 1
-            except (Exception, KeyboardInterrupt):
+            except KeyboardInterrupt:
                 break
+            except Empty:
+                pass
+            except Exception as e:
+                print(str(e))
+                pass
 
-            finally:
-                if self.__write_csv:
-                    self.__path = path_calculation(self.__directory_path, self.__filename + "csv",
-                                                   self.__file_index)
-                    with open(self.__path, 'w') as csv_file:
-                        for row in self.__csv_writer:
-                            csv_file.write(row + "\n")
+        if self.__write_csv:
+            self.__path = path_calculation(self.__directory_path, self.__filename + "_csv",
+                                           self.__file_index)
+            with open(self.__path, 'w') as csv_file:
+                for row in self.__csv_writer:
+                    tmp_s = row + "\n"
+                    csv_file.write(tmp_s)
 
-                    self.__csv_writer = [",".join(self.__fieldnames)]
-
-                if self.__write_json:
-                    self.__path = path_calculation(self.__directory_path, self.__filename + "json",
-                                                   self.__file_index)
-                    with open(self.__path, 'w') as json_file:
-                        json.dump(self.__json_writer, json_file, ensure_ascii=True)
-
-                    self.__json_writer = {}
+        if self.__write_json:
+            self.__path = path_calculation(self.__directory_path, self.__filename + "_json",
+                                           self.__file_index)
+            with open(self.__path, 'w') as json_file:
+                json.dump(self.__json_writer, json_file, ensure_ascii=True)
