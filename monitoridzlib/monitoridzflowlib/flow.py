@@ -27,18 +27,17 @@
 # SOFTWARE.
 #
 
-from flowlib.consts import Direction
-from flowlib.consts import Flag
-from flowlib.consts import ConnectionState
-
-from flowlib.consts import CONNECTION_FLAGS
-
-from flowlib.packet import Packet
-from flowlib.packet import ARPPacket
-from flowlib.packet import IPPacket
-
-import time
 import json
+import time
+
+from monitoridzflowlib.consts import CONNECTION_FLAGS
+from monitoridzflowlib.consts import ConnectionState
+from monitoridzflowlib.consts import Direction
+from monitoridzflowlib.consts import Flag
+
+from monitoridzflowlib.packet import ARPPacket
+from monitoridzflowlib.packet import IPPacket
+from monitoridzflowlib.packet import Packet
 
 
 def get_current_milli():
@@ -114,7 +113,7 @@ class Flow(__Flow):
         Private method.
         Use to append a new packet in the packet list of the flow object.
         :rtype: None
-        :param packet: flowlib.packet.Packet
+        :param packet: monitoridzflowlib.packet.Packet
         """
         self._packet_list += [packet]
         self._total_packet = len(self._packet_list)
@@ -211,7 +210,7 @@ class ARPFlow(Flow):
         Private method.
         Use to append a new packet in the packet list of the flow object.
         :rtype: None
-        :param packet: flowlib.packet.Packet
+        :param packet: monitoridzflowlib.packet.Packet
         """
         super()._add_packet(packet=packet)
 
@@ -367,7 +366,7 @@ class ICMPFlow(Flow):
         Private method.
         Use to append a new packet in the packet list of the flow object.
         :rtype: None
-        :param packet: flowlib.packet.Packet
+        :param packet: monitoridzflowlib.packet.Packet
         """
         super()._add_packet(packet=packet)
 

@@ -27,7 +27,7 @@
 # SOFTWARE.
 #
 
-from flowlib.consts import FLAGS
+from monitoridzflowlib.consts import FLAGS
 
 
 class PacketInitException(Exception):

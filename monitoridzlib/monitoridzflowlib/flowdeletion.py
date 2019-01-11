@@ -27,8 +27,8 @@
 # SOFTWARE.
 #
 
-from time import sleep
 import multiprocessing
+from time import sleep
 
 
 class FlowDeletion(multiprocessing.Process):
@@ -46,8 +46,8 @@ class FlowDeletion(multiprocessing.Process):
                 sleep(self.__interval)
 
                 flows = self.__data.get()
-                for id in flows.keys():
-                    self.__removed_ids.put(id)
+                for flow_id in flows.keys():
+                    self.__removed_ids.put(flow_id)
                 # Inscrire dans BDD
             except (Exception, KeyboardInterrupt):
                 break

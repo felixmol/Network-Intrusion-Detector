@@ -27,13 +27,10 @@
 # SOFTWARE.
 #
 
-from datetime import datetime
-from idsconfigparser import SettingParser
 import pyshark
-import flowlib
-import argparse
-import sys
-import json
+import monitoridzflowlib
+from datetime import datetime
+from monitoridzconfigparser import SettingParser
 
 
 def main(config_filename: str):
@@ -53,7 +50,7 @@ def main(config_filename: str):
 
     active_debug = setting_parser.get_bool_value("EXTRACTOR", "Debug", False)
 
-    flow_manager = flowlib.FlowManager(setting_parser)
+    flow_manager = monitoridzflowlib.FlowManager(setting_parser)
     flow_manager.start_service()
 
     start_time = datetime.now()
@@ -82,7 +79,7 @@ if __name__ == '__main__':
     #                    help="JSON file of containing each feature id\nThis must be an absolute path otherwise the "
     #                         "config cannot be loaded\ne.g. {\n\t'sourceMac': 1,\n\t'destinationMac': 2, \n\t...\n}")
     # args = parser.parse_args(sys.argv)
-    conf = "ids_config.conf"
+    conf = "monitoridz_extractor.conf"
     heuristics = None
 
     # if args.config is not None and args.config != "":

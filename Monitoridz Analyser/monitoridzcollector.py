@@ -27,15 +27,15 @@
 # SOFTWARE.
 #
 
-from idsconfigparser import SettingParser
-from flowanalyser import FlowAnalyser, FlowAnalyserInitError
-from flowsaver import FlowSaver
+import json
 import multiprocessing
 import socketserver
-import json
-# import argparse
-# import sys
-
+import argparse
+import sys
+from monitoridzanalyserlib import FlowAnalyser
+from monitoridzanalyserlib import FlowAnalyserInitError
+from monitoridzanalyserlib import FlowSaver
+from monitoridzconfigparser import SettingParser
 
 class InvalidIPv4(Exception):
     pass
@@ -106,7 +106,7 @@ if __name__ == '__main__':
     #                                                                                   "be an absolute path otherwise "
     #                                                                                   "config cannot be loaded")
     # args = parser.parse_args(sys.argv)
-    conf = "ids_collector.conf"
+    conf = "monitoridz_collector.conf"
 
     # if args.config is not None and args.config != "":
     #    conf = args.config
@@ -167,7 +167,7 @@ if __name__ == '__main__':
                 deep_analyser.start()
                 deep_analyser = None
                 print("[+] Flow analysis service started")
-            except Exception as e:  # FlowAnalyserInitError as e:
+            except (Exception, FlowAnalyserInitError) as e:
                 print(str(e))
                 deep_analysis_service_use = False
 

@@ -2,7 +2,7 @@
 #
 # !/usr/bin/env python3
 #
-# flowlib package Copyright(c) 2018 Félix Molina.
+# monitoridzanalyserlib package Copyright(c) 2018 Félix Molina.
 #
 # Many thanks to Télécom SudParis (http://www.telecom-sudparis.eu)
 #
@@ -27,20 +27,6 @@
 # SOFTWARE.
 #
 
-
-from flowlib.flow import ARPFlow
-from flowlib.flow import ICMPFlow
-from flowlib.flow import IPFlow
-from flowlib.flow import TCPFlow
-
-from flowlib.packet import Packet
-from flowlib.packet import ARPPacket
-from flowlib.packet import ICMPPacket
-from flowlib.packet import IPPacket
-
-from flowlib.flowsender import FlowSender
-from flowlib.flowdeletion import FlowDeletion
-
-from flowlib.flowmanager import FlowManager
-
-from flowlib.consts import COUNTERS
+from monitoridzanalyserlib.flowsaver import FlowSaver
+from monitoridzanalyserlib.flowanalyser import FlowAnalyserInitError
+from monitoridzanalyserlib.flowanalyser import FlowAnalyser

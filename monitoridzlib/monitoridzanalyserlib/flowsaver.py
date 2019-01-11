@@ -27,12 +27,12 @@
 # SOFTWARE.
 #
 
-from multiprocessing.queues import Empty
 import multiprocessing
 import json
 import time
 import os
 import platform
+from multiprocessing.queues import Empty
 
 
 def get_current_milli():

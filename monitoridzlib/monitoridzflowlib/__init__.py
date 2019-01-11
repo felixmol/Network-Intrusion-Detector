@@ -2,7 +2,7 @@
 #
 # !/usr/bin/env python3
 #
-# ids_config Sample Config File Copyright(c) 2018 Félix Molina.
+# monitoridzflowlib package Copyright(c) 2018 Félix Molina.
 #
 # Many thanks to Télécom SudParis (http://www.telecom-sudparis.eu)
 #
@@ -27,27 +27,23 @@
 # SOFTWARE.
 #
 
-[EXTRACTOR]
 
-Interface = wlp2s0
+from monitoridzflowlib.flow import ARPFlow
+from monitoridzflowlib.flow import ICMPFlow
+from monitoridzflowlib.flow import IPFlow
+from monitoridzflowlib.flow import TCPFlow
 
-OutputFile = off
+from monitoridzflowlib.packet import Packet
+from monitoridzflowlib.packet import ARPPacket
+from monitoridzflowlib.packet import ICMPPacket
+from monitoridzflowlib.packet import IPPacket
 
-OutputFilePath = capture.pcap
+from monitoridzflowlib.flowmanager import FlowManager
 
-BPFFilter =
+from monitoridzflowlib.consts import COUNTERS
 
-Debug = on
+from monitoridzflowlib.flowsender import InvalidIPv4
+from monitoridzflowlib.flowsender import SendingFlowsException
+from monitoridzflowlib.flowsender import FlowSender
 
-SendingInterval = 5
-
-DeletionInterval = 60
-
-FlowDuration = 180
-
-
-[COLLECTOR]
-
-IpAddress = 127.0.0.1
-
-Port = 8888
+from monitoridzflowlib.flowdeletion import FlowDeletion

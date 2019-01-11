@@ -2,7 +2,7 @@
 #
 # !/usr/bin/env python3
 #
-# idsconfigparser package Copyright(c) 2018 Félix Molina.
+# setup Copyright(c) 2018-2019 Félix Molina.
 #
 # Many thanks to Télécom SudParis (http://www.telecom-sudparis.eu)
 #
@@ -27,4 +27,16 @@
 # SOFTWARE.
 #
 
-from idsconfigparser.settingparser import SettingParser
+from distutils.core import setup
+
+setup(
+    name='monitoridzlib',
+    version='1.0',
+    description='Monitoridz library',
+    author='Félix Molina',
+    author_email='felixmolina8@gmail.com',
+    url='',
+    packages=['monitoridzanalyserlib', 'monitoridzconfigparser', 'monitoridzflowlib'],
+    license="MIT",
+    requires=['keras', 'tensorflow', 'sklearn', 'numpy']
+     )

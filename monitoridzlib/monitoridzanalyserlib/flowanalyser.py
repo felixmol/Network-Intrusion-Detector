@@ -27,14 +27,14 @@
 # SOFTWARE.
 #
 
-from idsconfigparser import SettingParser
-from sklearn.preprocessing import MinMaxScaler
-import multiprocessing
-import numpy
-import keras
 import csv
-import os
 import mimetypes
+import multiprocessing
+import os
+import keras
+import numpy
+from sklearn.preprocessing import MinMaxScaler
+from monitoridzconfigparser import SettingParser
 
 
 class FlowAnalyserInitError(Exception):
@@ -73,8 +73,8 @@ class FlowAnalyser(multiprocessing.Process):
 
         try:
             if os.path.exists(model_path_file) and os.path.isfile(model_path_file) and "json" in mimetypes.guess_type(
-                    model_path_file, False)[0].lower() and os.path.exists(weights_path_file) and os.path.isfile\
-                        (weights_path_file):
+                    model_path_file, False)[0].lower() and os.path.exists(weights_path_file) and os.path.isfile(
+                        weights_path_file):
                 with open(model_path_file, 'r') as json_model:
                     self.__model = keras.models.model_from_json(json_model.read())
                 # load weights into new model

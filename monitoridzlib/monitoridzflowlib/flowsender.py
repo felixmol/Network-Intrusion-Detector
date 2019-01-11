@@ -27,10 +27,10 @@
 # SOFTWARE.
 #
 
-from time import sleep
 import multiprocessing
 import socket
 import json
+from time import sleep
 
 
 class SendingFlowsException(Exception):
