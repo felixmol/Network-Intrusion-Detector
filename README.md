@@ -1,6 +1,7 @@
 # PFE SSR - Monitoring réseau dans un environnement SDN
 
-PFE SSR (NET5535) 2018-2019
+PFE SSR (NET5535) 2018-2019 - Télécom SudParis
+Félix Molina, Erwan Goarguer - Grégory Blanc, Mustafizur Shahid
 
 ## Contexte
 Le paradigme *Software-Defined Networking* (SDN) permet la gestion centralisée du 
