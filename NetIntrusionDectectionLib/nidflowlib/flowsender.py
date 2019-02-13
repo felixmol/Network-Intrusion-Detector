@@ -30,6 +30,7 @@
 import multiprocessing
 import socket
 import json
+# import ssl
 from time import sleep
 
 
@@ -55,10 +56,13 @@ def check_ipv4_address(address) -> bool:
 
 
 def send_data(address, port, flows):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as flow_socket:
+    # ssl.wrap_socket(, server_side=False,
+    #                          ssl_version=ssl.PROTOCOL_TLSv1_2,
+    #                          ciphers="TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as secured_flow_socket:
         try:
-            flow_socket.connect((address, port))
-            flow_socket.sendall(bytes(json.dumps(flows, ensure_ascii=True), encoding="utf-8"))
+            secured_flow_socket.connect((address, port))
+            secured_flow_socket.sendall(bytes(json.dumps(flows, ensure_ascii=True), encoding="utf-8"))
         except Exception as e:
             raise SendingFlowsException(str(e))
 

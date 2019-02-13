@@ -30,13 +30,13 @@
 from distutils.core import setup
 
 setup(
-    name='monitoridzlib',
-    version='1.0',
-    description='Monitoridz library',
+    name='nidlib',
+    version='1.1',
+    description='Network Intrusion Detection library',
     author='Félix Molina',
     author_email='felixmolina8@gmail.com',
     url='',
-    packages=['monitoridzanalyserlib', 'monitoridzconfigparser', 'monitoridzflowlib'],
+    packages=['nidanalyserlib', 'nidconfigparser', 'nidflowlib'],
     license="MIT License\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software"
             " and associated documentation files (the \"Software\"), to deal in the Software without restriction, "
             "including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, "

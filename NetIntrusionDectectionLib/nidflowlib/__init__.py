@@ -2,7 +2,7 @@
 #
 # !/usr/bin/env python3
 #
-# monitoridzflowlib package Copyright(c) 2018 Félix Molina.
+# nidflowlib package Copyright(c) 2018 Félix Molina.
 #
 # Many thanks to Télécom SudParis (http://www.telecom-sudparis.eu)
 #

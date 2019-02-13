@@ -32,10 +32,11 @@ import multiprocessing
 import socketserver
 import argparse
 import sys
-from monitoridzanalyserlib import FlowAnalyser
-from monitoridzanalyserlib import FlowAnalyserInitError
-from monitoridzanalyserlib import FlowSaver
-from monitoridzconfigparser import SettingParser
+from nidanalyserlib import FlowAnalyser
+from nidanalyserlib import FlowAnalyserInitError
+from nidanalyserlib import FlowSaver
+from nidconfigparser import SettingParser
+
 
 class InvalidIPv4(Exception):
     pass
@@ -106,7 +107,7 @@ if __name__ == '__main__':
     #                                                                                   "be an absolute path otherwise "
     #                                                                                   "config cannot be loaded")
     # args = parser.parse_args(sys.argv)
-    conf = "monitoridz_collector.conf"
+    conf = "nid_collector.conf"
 
     # if args.config is not None and args.config != "":
     #    conf = args.config

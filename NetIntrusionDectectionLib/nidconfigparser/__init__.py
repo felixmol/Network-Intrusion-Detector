@@ -2,7 +2,7 @@
 #
 # !/usr/bin/env python3
 #
-# monitoridzanalyserlib package Copyright(c) 2018 Félix Molina.
+# nidconfigparser package Copyright(c) 2018 Félix Molina.
 #
 # Many thanks to Télécom SudParis (http://www.telecom-sudparis.eu)
 #
@@ -27,6 +27,4 @@
 # SOFTWARE.
 #
 
-from monitoridzanalyserlib.flowsaver import FlowSaver
-from monitoridzanalyserlib.flowanalyser import FlowAnalyserInitError
-from monitoridzanalyserlib.flowanalyser import FlowAnalyser
+from monitoridzconfigparser.settingparser import SettingParser

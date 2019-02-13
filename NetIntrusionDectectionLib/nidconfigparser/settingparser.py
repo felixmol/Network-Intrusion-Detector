@@ -33,7 +33,7 @@ import os
 
 class SettingParser(object):
 
-    def __init__(self, filename="monitoridz_extractor.conf", allow_no_value=False):
+    def __init__(self, filename="nid_extractor.conf", allow_no_value=False):
         super().__init__()
 
         self.error = "no error"

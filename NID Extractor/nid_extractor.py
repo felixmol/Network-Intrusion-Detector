@@ -79,7 +79,7 @@ if __name__ == '__main__':
     #                    help="JSON file of containing each feature id\nThis must be an absolute path otherwise the "
     #                         "config cannot be loaded\ne.g. {\n\t'sourceMac': 1,\n\t'destinationMac': 2, \n\t...\n}")
     # args = parser.parse_args(sys.argv)
-    conf = "monitoridz_extractor.conf"
+    conf = "nid_extractor.conf"
     heuristics = None
 
     # if args.config is not None and args.config != "":

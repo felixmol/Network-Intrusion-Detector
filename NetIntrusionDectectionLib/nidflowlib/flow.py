@@ -113,7 +113,7 @@ class Flow(__Flow):
         Private method.
         Use to append a new packet in the packet list of the flow object.
         :rtype: None
-        :param packet: monitoridzflowlib.packet.Packet
+        :param packet: nidflowlib.packet.Packet
         """
         self._packet_list += [packet]
         self._total_packet = len(self._packet_list)
@@ -210,7 +210,7 @@ class ARPFlow(Flow):
         Private method.
         Use to append a new packet in the packet list of the flow object.
         :rtype: None
-        :param packet: monitoridzflowlib.packet.Packet
+        :param packet: nidflowlib.packet.Packet
         """
         super()._add_packet(packet=packet)
 
@@ -366,7 +366,7 @@ class ICMPFlow(Flow):
         Private method.
         Use to append a new packet in the packet list of the flow object.
         :rtype: None
-        :param packet: monitoridzflowlib.packet.Packet
+        :param packet: nidflowlib.packet.Packet
         """
         super()._add_packet(packet=packet)
 
@@ -544,57 +544,32 @@ class TCPFlow(IPFlow):
     def _follow_flag_flow(self, packet: IPPacket):
         direction = self.packet_direction(packet)
         for flag in packet.get_flags():
-            if flag == Flag.SYN:
+            if flag == Flag.FIN:
                 if direction == Direction.SourceToDestination:
-                    self._flags[ConnectionState.ESTABLISHMENT][ConnectionState.SYN_SRC] = 1
+                    self._flags[ConnectionState.FIN_SRC] = 1
                 else:
-                    self._flags[ConnectionState.ESTABLISHMENT][ConnectionState.SYN_DST] = 1
-            elif flag == Flag.FIN:
-                if direction == Direction.SourceToDestination:
-                    self._flags[ConnectionState.TERMINATION][ConnectionState.FIN_SRC] = 1
-                else:
-                    self._flags[ConnectionState.TERMINATION][ConnectionState.FIN_DST] = 1
+                    self._flags[ConnectionState.FIN_DST] = 1
             elif flag == Flag.ACK:
-                if self._flags[ConnectionState.ESTABLISHMENT][
-                    ConnectionState.SYN_DST] == 1 and direction == Direction.SourceToDestination and (
-                                self._flags[ConnectionState.TERMINATION][ConnectionState.FIN_SRC] == 0 and
-                                self._flags[ConnectionState.TERMINATION][ConnectionState.FIN_DST] == 0):
-                    self._flags[ConnectionState.ESTABLISHMENT][ConnectionState.ACK_SRC] = 1
-                elif self._flags[ConnectionState.ESTABLISHMENT][
-                    ConnectionState.SYN_SRC] == 1 and direction == Direction.DestinationToSource and (
-                                self._flags[ConnectionState.TERMINATION][ConnectionState.FIN_SRC] == 0 and
-                                self._flags[ConnectionState.TERMINATION][ConnectionState.FIN_DST] == 0):
-                    self._flags[ConnectionState.ESTABLISHMENT][ConnectionState.ACK_DST] = 1
-                elif self._flags[ConnectionState.TERMINATION][
-                    ConnectionState.FIN_DST] == 1 and direction == Direction.SourceToDestination and (
-                                self._flags[ConnectionState.ESTABLISHMENT][ConnectionState.SYN_SRC] == 1 and
-                                self._flags[ConnectionState.TERMINATION][ConnectionState.SYN_DST] == 1):
-                    self._flags[ConnectionState.TERMINATION][ConnectionState.ACK_SRC] = 1
-                elif self._flags[ConnectionState.TERMINATION][
-                    ConnectionState.FIN_SRC] == 1 and direction == Direction.DestinationToSource and (
-                                self._flags[ConnectionState.ESTABLISHMENT][ConnectionState.SYN_SRC] == 1 and
-                                self._flags[ConnectionState.ESTABLISHMENT][ConnectionState.SYN_DST] == 1):
-                    self._flags[ConnectionState.TERMINATION][ConnectionState.ACK_DST] = 1
+                if direction == Direction.SourceToDestination and self._flags[ConnectionState.FIN_DST] == 1 :
+                    self._flags[ConnectionState.ACK_SRC] = 1
+                elif direction == Direction.DestinationToSource and self._flags[ConnectionState.FIN_SRC] == 1 :
+                    self._flags[ConnectionState.ACK_DST] = 1
                 else:
                     pass
 
-                    #    def aggregate(self, packet):
-                    #        if super().aggregate(packet):
-                    #            self._follow_flag_flow(packet)
-                    #            self.connection_state()
-                    #
-                    #            return True
-                    #
-                    #        return False
+    def aggregate(self, packet: IPPacket, counters=None):
+        if super().aggregate(packet, counters):
+            self._follow_flag_flow(packet)
+            self.connection_state()
+            return True
+
+        return False
 
     def is_open(self):
         return self._open
 
     def connection_state(self):
-        if 0 not in self._flags[ConnectionState.ESTABLISHMENT].values():
-            self._open = True
-
-        if 0 not in self._flags[ConnectionState.TERMINATION].values():
+        if 0 not in self._flags.values():
             self._open = False
             self.close_flow()
 
